@@ -1,6 +1,7 @@
 FROM node:21-alpine
 
 RUN mkdir -p /home/node/app/node_modules
+RUN npm install --global node-gyp@2.11.2
 
 WORKDIR /home/node/app
 
