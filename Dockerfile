@@ -2,13 +2,11 @@ FROM node:21-alpine
 
 RUN mkdir -p /home/node/app/node_modules
 
-ENV GLIBC_VERSION 2.23-r1
-
 RUN apk --update add --no-cache --virtual=build-dependencies curl \
- && curl -Ls https://github.com/andyshinn/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-${GLIBC_VERSION}.apk -o /tmp/glibc-${GLIBC_VERSION}.apk \
- && curl -Ls https://github.com/andyshinn/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-bin-${GLIBC_VERSION}.apk -o /tmp/glibc-bin-${GLIBC_VERSION}.apk \
- && curl -Ls https://github.com/andyshinn/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-i18n-${GLIBC_VERSION}.apk -o /tmp/glibc-i18n-${GLIBC_VERSION}.apk \
- && apk add --allow-untrusted /tmp/glibc-${GLIBC_VERSION}.apk /tmp/glibc-bin-${GLIBC_VERSION}.apk /tmp/glibc-i18n-${GLIBC_VERSION}.apk \
+ && curl -Ls https://github.com/andyshinn/alpine-pkg-glibc/releases/download/$2.23-r1/glibc-$2.23-r1.apk -o /tmp/glibc-$2.23-r1.apk \
+ && curl -Ls https://github.com/andyshinn/alpine-pkg-glibc/releases/download/$2.23-r1/glibc-bin-$2.23-r1.apk -o /tmp/glibc-bin-$2.23-r1.apk \
+ && curl -Ls https://github.com/andyshinn/alpine-pkg-glibc/releases/download/$2.23-r1/glibc-i18n-$2.23-r1.apk -o /tmp/glibc-i18n-$2.23-r1.apk \
+ && apk add --allow-untrusted /tmp/glibc-$2.23-r1.apk /tmp/glibc-bin-$2.23-r1.apk /tmp/glibc-i18n-$2.23-r1.apk \
  && /usr/glibc-compat/bin/localedef --force --inputfile POSIX --charmap UTF-8 C.UTF-8 || true \
  && /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc/usr/lib \
  && echo "export LANG=C.UTF-8" > /etc/profile.d/locale.sh \
