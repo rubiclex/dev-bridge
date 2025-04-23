@@ -6,7 +6,7 @@ WORKDIR /home/node/app
 
 COPY package*.json ./
 
-RUN apk add --no-cache --virtual .gyp python make g++ \
+RUN apk add --no-cache --virtual .gyp python3 make g++ \
     && npm install canvas:^2.11.2 \
     && apk del .gyp
 RUN npm install
