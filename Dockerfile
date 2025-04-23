@@ -1,8 +1,9 @@
 FROM node:21-alpine
 
 RUN mkdir -p /home/node/app/node_modules
-RUN apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev 
-RUN npm install --global node-gyp@^2.11.2
+RUN apk add --no-cache --virtual .gyp python make g++ \
+    && npm install [ your npm dependencies here ] \
+    && apk del .gyp
 
 WORKDIR /home/node/app
 
