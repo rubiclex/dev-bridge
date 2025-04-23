@@ -1,9 +1,4 @@
-FROM ubuntu:plucky
-
-RUN apt-get install -y curl 
-RUN curl -fsSL https://deb.nodesource.com/setup_21.x -o nodesource_setup.sh 
-RUN -E bash nodesource_setup.sh 
-RUN apt-get install -y nodejs
+FROM nikolaik/python-nodejs:python3.8-nodejs21-alpine
 
 RUN mkdir -p /home/node/app/node_modules
 
