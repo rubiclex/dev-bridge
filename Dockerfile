@@ -12,4 +12,4 @@ ENV Port=8080
 
 EXPOSE 8080
 
-CMD [ "npm", "start" ]
+CMD [ "npm", "index.js" ]
