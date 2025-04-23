@@ -1,9 +1,6 @@
 FROM nikolaik/python-nodejs:latest
 
 RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
-RUN apt-get install -y python3.6 \
-    && ln -s /usr/bin/python3.6 /usr/bin/python3
-RUN python3 -V
 
 WORKDIR /home/node/app
 
