@@ -1,11 +1,22 @@
+# define base image
 FROM node:21.6.1-bullseye-slim
 
-RUN mkdir -p /home/node/app/node_modules
+# download dumb-init
+RUN apt-get update && apt-get install -y --no-install-recommends dumb-init
 
-WORKDIR /home/node/app
+# define environment
+ENV NODE_ENV production
 
-COPY package*.json ./
+# set work directory
+WORKDIR /usr/src/app
 
+# copy all sources to container
+COPY --chown=node:node . /usr/src/app
+
+# install dependencies
 RUN npm install
+RUN npm ci --only=production
 
-CMD [ "node", "index.js" ]
+# run your app
+USER node
+CMD [ "dumb-init", "node", "index.js" ]
