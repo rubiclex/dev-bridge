@@ -1,8 +1,9 @@
 {
     "name": "Dev-Bridge",
     "version": "1.0.0",
+    "main": "index.js",
     "keywords": ["util", "functional", "server", "client", "browser"],
-    "author": "rubiclex",
+    "author": "rubiclex <admin@rubic-solution.de>",
     "contributors": [],
     "dependencies": {}
 }
