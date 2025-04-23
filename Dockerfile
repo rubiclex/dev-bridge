@@ -9,6 +9,9 @@ COPY package*.json ./
 RUN apk add --no-cache --virtual .gyp python3 make g++ \
     && npm install -g canvas@2.11.2 \
     && apk del .gyp
+
+RUN npm install node-pre-gyp -g  
+
 RUN npm install
 
 CMD [ "node", "index.js" ]
