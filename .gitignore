@@ -1,0 +1,5 @@
+node_modules/
+.prettierrc.json
+auth-cache/
+package-lock.json
+.env
