@@ -1,7 +1,6 @@
-FROM node:21-alpine
+FROM node:21.7.3-bookworm
 
 RUN mkdir -p /home/node/app/node_modules
-RUN apk add --no-cache --virtual .gyp python make g++ 
 
 WORKDIR /home/node/app
 
