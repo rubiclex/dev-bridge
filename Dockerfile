@@ -1,4 +1,4 @@
-FROM node:21.7.3-alpine
+FROM node:21.6.1-bullseye-slim
 
 RUN mkdir -p /home/node/app/node_modules
 
