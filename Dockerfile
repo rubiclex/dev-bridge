@@ -15,6 +15,8 @@ RUN apk add --update --no-cache \
     autoconf \
     automake
 
+
+COPY . /usr/src/app
 RUN npm install
 
 CMD [ "node", "index.js" ]
