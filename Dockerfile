@@ -1,10 +1,15 @@
 FROM python:latest
 
-RUN mkdir -p /home/node/app/node_modules 
+RUN apt-get update && apt-get upgrade -y && apt-get install -y nodejs
+    npm 
+
+RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 
 WORKDIR /home/node/app
 
 COPY package*.json ./
+
+USER node
 
 RUN npm install
 
