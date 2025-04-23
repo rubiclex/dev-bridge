@@ -1,9 +1,7 @@
 FROM node:21-alpine
 
 RUN mkdir -p /home/node/app/node_modules
-RUN apk add --no-cache --virtual .gyp python make g++ \
-    && npm install [ your npm dependencies here ] \
-    && apk del .gyp
+RUN apk add --no-cache --virtual .gyp python make g++ 
 
 WORKDIR /home/node/app
 
