@@ -6,7 +6,7 @@ WORKDIR /home/node/app
 
 COPY package*.json ./
 
-RUN apk add --no-cache --virtual .gyp python3 make g++ 
+RUN apk add --no-cache --virtual .gyp python3 make g++ cairo pango
 
 RUN npm install node-pre-gyp -g  
 
