@@ -1,24 +1,20 @@
-# define base image
-FROM node:21.6.1-bullseye-slim
+FROM node:21.7.3-alpine
 
-# download dumb-init
-RUN apt-get update && apt-get install -y --no-install-recommends dumb-init
-
-# add Python3
-RUN apt-get install python3 
-# define environment
-ENV NODE_ENV production
-
-# set work directory
 WORKDIR /usr/src/app
 
-# copy all sources to container
-COPY --chown=node:node . /usr/src/app
+COPY package*.json ./
 
-# install dependencies
+RUN apk add --update --no-cache \
+    make \
+    g++ \
+    jpeg-dev \
+    cairo-dev \
+    giflib-dev \
+    pango-dev \
+    libtool \
+    autoconf \
+    automake
+
 RUN npm install
-RUN npm ci --only=production
 
-# run your app
-USER node
-CMD [ "dumb-init", "node", "index.js" ]
+CMD [ "node", "index.js" ]
