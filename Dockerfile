@@ -4,6 +4,8 @@ FROM node:21.6.1-bullseye-slim
 # download dumb-init
 RUN apt-get update && apt-get install -y --no-install-recommends dumb-init
 
+# add Python3
+RUN apt-get install python3 
 # define environment
 ENV NODE_ENV production
 
