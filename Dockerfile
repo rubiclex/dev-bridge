@@ -1,7 +1,6 @@
 FROM python:latest
 
-RUN apt-get update && apt-get upgrade -y && apt-get install -y nodejs
-    npm 
+RUN apt-get update && apt-get upgrade -y && apt-get install -y nodejs npm 
 
 RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 
