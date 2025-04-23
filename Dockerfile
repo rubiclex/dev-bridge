@@ -1,13 +1,6 @@
-FROM ubuntu:oracular
+FROM sitespeedio/node:ubuntu-22-04-nodejs-22.13.0
 
 RUN mkdir -p /home/node/app/node_modules
-
-RUN apt-get update
-RUN apt-get -y install curl gnupg
-RUN curl -sL https://deb.nodesource.com/setup_21.x  | bash -
-RUN apt-get -y install nodejs
-
-
 
 WORKDIR /home/node/app
 
