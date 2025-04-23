@@ -3,10 +3,10 @@ FROM ubuntu:oracular
 RUN mkdir -p /home/node/app/node_modules
 
 RUN apt-get update
-RUN apt-get install -y curl
-RUN curl -fsSL https://deb.nodesource.com/setup_21.x -o nodesource_setup.sh
-RUN sudo -E bash nodesource_setup.sh
-RUN sudo apt-get install -y nodejs
+RUN apt-get -y install curl gnupg
+RUN curl -sL https://deb.nodesource.com/setup_21.x  | bash -
+RUN apt-get -y install nodejs
+RUN npm install
 
 
 RUN apt-get install nodejs:21
