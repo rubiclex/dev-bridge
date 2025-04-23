@@ -1,4 +1,4 @@
-FROM nikolaik/python-nodejs:latest
+FROM python:latest
 
 RUN mkdir -p /home/node/app/node_modules 
 
