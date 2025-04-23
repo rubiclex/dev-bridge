@@ -1,4 +1,4 @@
-FROM nikolaik/python-nodejs:python3.9-nodejs21-alpine
+FROM nikolaik/python-nodejs:python3.9-nodejs22
 
 RUN mkdir -p /home/node/app/node_modules
 
