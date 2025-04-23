@@ -1,7 +1,10 @@
 FROM node:21-alpine
 
 RUN mkdir -p /home/node/app/node_modules
-RUN apk add python3 make gcc g++ --no-cache
+RUN apk add --no-cache --virtual .gyp \
+        python3 \
+        make \
+        g++
 
 WORKDIR /home/node/app
 
