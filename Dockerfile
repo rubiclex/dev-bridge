@@ -6,9 +6,7 @@ WORKDIR /home/node/app
 
 COPY package*.json ./
 
-RUN apk add --no-cache --virtual .gyp python3 make g++ \
-    && npm install -g canvas@2.11.2 \
-    && apk del .gyp
+RUN apk add --no-cache --virtual .gyp python3 make g++ 
 
 RUN npm install node-pre-gyp -g  
 
