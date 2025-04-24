@@ -12,9 +12,7 @@ RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg -
 
 RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_21.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 
-RUN apt update
-RUN apt aptitude -y nodejs
-RUN apt aptitude -y npm
+RUN apt-get update && apt-get install -y nodejs
 
 
 RUN npm install canvas@2.11.1
