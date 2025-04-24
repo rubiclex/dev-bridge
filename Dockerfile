@@ -4,6 +4,7 @@ FROM ubuntu:22.04
 # set work directory
 WORKDIR /usr/src/app
 
+RUN apt-get update
 RUN apt install -y build-essential
 RUN apt install -y curl
 RUN curl -sL https://deb.nodesource.com/setup_21.x | sudo -E bash -
