@@ -3,7 +3,7 @@ FROM node:21.6.1-bullseye-slim
 
 # download dumb-init
 RUN apt-get update && apt-get install -y --no-install-recommends dumb-init
-RUN apt-get update && apt-get install python3
+RUN apt-get update && apt-get install -y python3
 
 
 # define environment
