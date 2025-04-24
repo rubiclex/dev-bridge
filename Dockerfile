@@ -1,8 +1,7 @@
 FROM alpine:3.16.8
 
 ENV GLIBC_VERSION 2.35-r1
-ENV NODE_PACKAGE_URL  https://unofficial-builds.nodejs.org/download/release/v18.16.0/node-v21.7.2-linux-x64-musl.tar.gz
-
+ENV NODE_PACKAGE_URL  https://unofficial-builds.nodejs.org/download/release/v21.7.2/node-v21.7.2-linux-x64-musl.tar.gz
 
 # Download and install glibc
 RUN apk add --update curl && \
