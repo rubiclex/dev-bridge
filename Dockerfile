@@ -10,7 +10,7 @@ RUN apk --no-cache add  \
         ca-certificates \
         libstdc++
 # Get and install glibc for alpine
-ARG APK_GLIBC_VERSION=2.37
+ARG APK_GLIBC_VERSION=2.35-r1
 ARG APK_GLIBC_FILE="glibc-${APK_GLIBC_VERSION}.apk"
 ARG APK_GLIBC_BIN_FILE="glibc-bin-${APK_GLIBC_VERSION}.apk"
 ARG APK_GLIBC_BASE_URL="https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${APK_GLIBC_VERSION}"
