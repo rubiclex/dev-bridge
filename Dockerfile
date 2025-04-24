@@ -25,7 +25,7 @@ RUN tar -zxvf *.tar.gz --directory /opt/nodejs --strip-components=1
 RUN rm *.tar.gz
 RUN ln -s /opt/nodejs/bin/node /usr/local/bin/node
 RUN ln -s /opt/nodejs/bin/npm /usr/local/bin/npm
-
+RUN apk add --update nodejs npm
 
 RUN apk update && apk add build-base g++ cairo-dev pango-dev giflib-dev
 
