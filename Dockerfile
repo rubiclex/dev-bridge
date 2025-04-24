@@ -4,6 +4,7 @@ FROM node:21.7.3-alpine
 # set work directory
 WORKDIR /usr/src/app
 
+RUN apk add python3
 RUN apk add --no-cache \
         sudo \
         curl \
@@ -14,8 +15,5 @@ RUN apk add --no-cache \
         jpeg-dev \
         pango-dev \
         cairo-dev \
-        giflib-dev \
-        python2 \
-        ;
-
+        giflib-dev 
 RUN npm install canvas
