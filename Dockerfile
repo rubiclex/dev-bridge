@@ -5,7 +5,6 @@ FROM ubuntu:22.04
 WORKDIR /usr/src/app
 
 RUN apt-get update
-RUN apt install -y build-essential
 RUN apt install -y curl
 RUN curl -sL https://deb.nodesource.com/setup_21.x | bash -
 
