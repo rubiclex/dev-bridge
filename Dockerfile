@@ -15,7 +15,7 @@ RUN apk add --no-cache \
         pango-dev \
         cairo-dev \
         giflib-dev \
-        python \
+        python2 \
         ;
 
 RUN npm install canvas
