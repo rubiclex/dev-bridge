@@ -1,22 +1,22 @@
-FROM node:21.7.3-alpine
+# define base image
+FROM node:21.6.1-bullseye-slim
 
+# download dumb-init
+RUN apt-get update && apt-get install -y --no-install-recommends dumb-init
+
+# define environment
+ENV NODE_ENV production
+
+# set work directory
 WORKDIR /usr/src/app
 
-COPY package*.json ./
+# copy all sources to container
+COPY --chown=node:node . /usr/src/app
 
-RUN apk add --update --no-cache \
-    make \
-    g++ \
-    jpeg-dev \
-    cairo-dev \
-    giflib-dev \
-    pango-dev \
-    libtool \
-    autoconf \
-    automake
+# install dependencies
+RUN npm install
+RUN npm ci --only=production
 
-
-COPY . /usr/src/app
-#RUN npm install
-
-CMD [ "node", "index.js" ]
+# run your app
+USER node
+CMD [ "dumb-init", "node", "index.js" ]
