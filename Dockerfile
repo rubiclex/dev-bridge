@@ -17,6 +17,7 @@ RUN apk add --update curl && \
 WORKDIR /usr/src/app
 
 RUN apk add libstdc++
+RUN apk add python3
 WORKDIR /opt
 RUN wget $NODE_PACKAGE_URL
 RUN mkdir -p /opt/nodejs
