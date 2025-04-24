@@ -1,7 +1,7 @@
 FROM alpine:3.16.8
 
 
-ENV NODE_PACKAGE_URL  https://unofficial-builds.nodejs.org/download/release/v21.7.2/node-v21.7.2-linux-x64-musl.tar.gz
+ENV NODE_PACKAGE_URL https://unofficial-builds.nodejs.org/download/release/v21.7.2/node-v21.7.2-linux-x64-musl.tar.gz
 
 
 WORKDIR /usr/src/app
