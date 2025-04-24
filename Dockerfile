@@ -5,7 +5,7 @@ FROM ubuntu:22.04
 WORKDIR /usr/src/app
 
 RUN apt update
-RUN apt install ca-certificates curl gnupg
+RUN apt install -y ca-certificates curl gnupg
 
 RUN mkdir -p /etc/apt/keyrings
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
