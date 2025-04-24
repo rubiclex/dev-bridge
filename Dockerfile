@@ -5,5 +5,5 @@ FROM node:21.7.3-alpine
 WORKDIR /usr/src/app
 
 RUN apk add python3
-
+RUN brew install pkg-config cairo pango libpng jpeg giflib librsvg
 RUN npm install canvas
