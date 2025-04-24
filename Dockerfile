@@ -12,5 +12,5 @@ RUN apk --no-cache add  \
 # Get and install glibc for alpine
 RUN apk add gcompat
 
-RUN npm install canvas@2.5.0
+RUN npm install canvas@2.11.1
         
