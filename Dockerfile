@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 RUN apt-get update
 RUN apt install -y build-essential
 RUN apt install -y curl
-RUN curl -sL https://deb.nodesource.com/setup_21.x | -E bash -
+RUN curl -sL https://deb.nodesource.com/setup_21.x | bash -
 
 RUN apt install -y nodejs
 RUN apt install -y npm
