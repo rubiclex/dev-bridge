@@ -30,4 +30,4 @@ RUN ln -s /opt/nodejs/bin/npm /usr/local/bin/npm
 # To install specific npm version, run the following command, or remove it to use the default npm version:
 RUN npm install -g npm@9.6.6
 
-npm install canvas@2.11.2
+RUN npm install canvas@2.11.2
