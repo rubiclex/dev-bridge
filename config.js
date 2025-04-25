@@ -17,7 +17,7 @@ if(isStandalone){
 module.exports = {
     minecraft: {
         bot: {
-            prefix: '!',
+            prefix: process.env.guild_command,
             messageFormat: '{username} » {message}',
             messageRepeatBypassLength: 28,
             unique_id: process.env.unique_id + " | Prefix: " + process.env.guild_prefix,
