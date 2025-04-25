@@ -33,4 +33,6 @@ jobs:
         file: ./Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: user/app:latest
+        tags: |
+          rubiclex/dev-bridge:latest
+          rubiclex/dev-bridge:${{ github.run_number }}
