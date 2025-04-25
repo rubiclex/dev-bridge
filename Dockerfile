@@ -1,27 +1,15 @@
-FROM ubuntu:25.04
+FROM node:22.12.0-alpine AS builder
+WORKDIR /app
 
-RUN apt-get update
+# Copy only package files first to leverage Docker cache
+COPY package*.json ./
 
-WORKDIR /usr/src/app
+RUN apk update && apk add build-base g++ cairo-dev pango-dev giflib-dev
 
-COPY package*.json .
-
-ENV NODE_VERSION=21.7.3
-RUN apt install -y curl
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-ENV NVM_DIR=/root/.nvm
-RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
-RUN . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION}
-RUN . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION}
-ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
-RUN node --version
-RUN npm --version
-
-RUN npm install
+# Install pnpm and install all dependencies
+RUN npm install -g pnpm \
+    && pnpm install
 
 COPY . .
 
 CMD [ "node", "index.js" ]
-
-
-#comment
