@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 
 COPY package*.json .
 
-RUN apt install curl
+RUN apt install -y curl
 RUN curl -sL https://deb.nodesource.com/setup_21.x | bash -
 RUN apt-get install -y nodejs
 RUN apt-get install -y npm
