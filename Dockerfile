@@ -19,4 +19,6 @@ RUN npm --version
 
 RUN npm install
 
-CMD ["bash"]
+COPY . .
+
+CMD [ "node", "index.js" ]
