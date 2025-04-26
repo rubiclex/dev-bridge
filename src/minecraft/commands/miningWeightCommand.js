@@ -36,7 +36,7 @@ class MiningWeightCommand extends minecraftCommand {
                         top = res.data.percentile;
                         cw = res.data.coleweight;
                         
-                        this.send(`/${channel} ${username}'s Coleweight: ${cw} Percentile(%): ${top}% Rank: ${rank}`)
+                        this.send(`/${channel} ${username}'s Coleweight: ${cw} Top(%): ${top}% Rank: ${rank}`)
                     }
                 })
             }
