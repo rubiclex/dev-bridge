@@ -17,7 +17,7 @@ class platorngCommand extends minecraftCommand {
             if (username == "Platow") {
                 rngvalue = 100;
             }
-            rngvalue.toFixed(2);
+            rngvalue = rngvalue.toFixed(2);
             this.send(`/${channel} ${username}'s PlatoRNG: ${rngvalue}%`)
                         
         } catch (error) {
