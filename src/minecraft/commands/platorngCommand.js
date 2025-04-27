@@ -25,10 +25,11 @@ class platorngCommand extends minecraftCommand {
             
             let rngvalue = Math.random() * (100 - 0) + 0;           
             if (username == "Platow") {
-                rngvalue = 100;
+                this.send(`/${channel} You know allready he got 100%! - nice try`);
+            } else {
+                rngvalue = rngvalue.toFixed(2);
+                this.send(`/${channel} ${username}'s PlatoRNG: ${rngvalue}%`);
             }
-            rngvalue = rngvalue.toFixed(2);
-            this.send(`/${channel} ${username}'s PlatoRNG: ${rngvalue}%`)
                         
         } catch (error) {
             this.send(`/${channel} [ERROR] ${error}`);
