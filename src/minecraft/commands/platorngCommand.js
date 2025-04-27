@@ -9,7 +9,7 @@ class platorngCommand extends minecraftCommand {
         this.aliases = ['ptr'];
         this.description = 'Sends your Platow Rng Value';
     }
-
+    
     async onCommand(username, message, channel = 'gc') {
         try {
             
@@ -17,8 +17,8 @@ class platorngCommand extends minecraftCommand {
             if (username == "Platow") {
                 rngvalue = 100;
             }
-            
-            this.send(`/${channel} ${username}'s PlatoRNG: ${rngvalue}`)
+            rngvalue.toFixed(2);
+            this.send(`/${channel} ${username}'s PlatoRNG: ${rngvalue}%`)
                         
         } catch (error) {
             this.send(`/${channel} [ERROR] ${error}`);
