@@ -24,7 +24,7 @@ class platorngCommand extends minecraftCommand {
             username = passed_username || username;
             
             let rngvalue = Math.random() * (100 - 0) + 0;           
-            if (username == "Platow") {
+            if (username.toLowerCase() == "platow") {
                 this.send(`/${channel} You know allready he got 100%! - nice try!`);
             } else {
                 rngvalue = rngvalue.toFixed(2);
