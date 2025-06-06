@@ -2,7 +2,7 @@ const cluster = require('node:cluster');
 const axios = require('axios');
 const config = require('./config.js');
 const Logger = require('./src/Logger.js');
-
+//comment
 const webhook_url = config.minecraft.API.SCF.fail_webhook;
 
 const fetch = require('node-fetch');
