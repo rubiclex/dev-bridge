@@ -328,13 +328,13 @@ class StateHandler extends eventHandler {
             let invite_message = config.minecraft.guild.join_message
                 ? config.minecraft.guild.join_message
                 : messages.guildJoinMessage;
-
+            /*
             bot.chat(
                 `/gc ${replaceVariables(invite_message, {
                     prefix: config.minecraft.bot.prefix
                 })}`
             );
-
+            */
             if (!!config.bot.commands.notifyContent) {
                 await client.channels.cache
                     .get(`${config.discord.channels.loggingChannel}`)
