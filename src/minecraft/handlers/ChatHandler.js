@@ -260,8 +260,206 @@ class StateHandler extends eventHandler {
             }
         }
 
+        if (this.isJoinMessage(message)) {
+            let username = message
+                .replace(/\[(.*?)\]/g, '')
+                .trim()
+                .split(/ +/g)[0];
+            try {
+                username = username.trim();
+            } catch (e) {
+                Logger.warnMessage(e);
+            }
 
+            let uuid;
+            try {
+                uuid = await getUUID(username);
+            } catch (e) {
+                Logger.warnMessage(e);
+            }
 
+            const skykings_scammer = await Skykings.lookupUUID(uuid);
+            const blacklisted = await Blacklist.checkBlacklist(uuid);
+            const scf_blacklisted = await SCFAPI.checkBlacklist(uuid);
+
+            const statsEmbed = new EmbedBuilder()
+                .setColor(2067276)
+                .setTitle(`${username} has joined the Guild!`)
+                .addFields(
+                    {
+                        name: 'Skykings Flag',
+                        value: `\`${skykings_scammer}\``,
+                        inline: true
+                    },
+                    {
+                        name: 'Blacklist Flag',
+                        value: `\`${blacklisted}\``,
+                        inline: true
+                    },
+                    {
+                        name: 'SCF Flag',
+                        value: `\`${scf_blacklisted}\``,
+                        inline: true
+                    }
+                )
+                .setThumbnail(`https://www.mc-heads.net/avatar/${username}`)
+                .setFooter({
+                    text: `/help [command] for more information`,
+                    iconURL: config.API.SCF.logo
+                });
+
+            await client.channels.cache.get(`${config.discord.channels.loggingChannel}`).send({ embeds: [statsEmbed] });
+
+            if (skykings_scammer === true || blacklisted === true || scf_blacklisted === true) {
+                this.minecraft.broadcastHeadedEmbed({
+                    message: 'Banned player (' + username + ') tried to join the guild.',
+                    title: `Banned player`,
+                    icon: `https://mc-heads.net/avatar/${username}`,
+                    color: 15548997,
+                    channel: 'Logger'
+                });
+
+                bot.chat(`/guild kick ${username} You were banned from this guild. Submit an appeal to rejoin.`);
+
+                return;
+            }
+
+            await delay(1000);
+            let invite_message = config.minecraft.guild.join_message
+                ? config.minecraft.guild.join_message
+                : messages.guildJoinMessage;
+
+            bot.chat(
+                `/oc ${replaceVariables(invite_message, {
+                    prefix: config.minecraft.bot.prefix
+                })}`
+            );
+
+            if (!!config.bot.commands.notifyContent) {
+                await client.channels.cache
+                    .get(`${config.discord.channels.loggingChannel}`)
+                    .send(`${config.bot.commands.notifyContent}\n:inbox_tray: ${username} has joined the guild!`);
+            }
+
+            return [
+                this.minecraft.broadcastHeadedEmbed({
+                    message: replaceVariables(messages.joinMessage, { username }),
+                    title: `Member Joined`,
+                    icon: `https://mc-heads.net/avatar/${username}`,
+                    color: 2067276,
+                    channel: 'Logger'
+                }),
+                this.minecraft.broadcastHeadedEmbed({
+                    message: replaceVariables(messages.joinMessage, { username }),
+                    title: `Member Joined`,
+                    icon: `https://mc-heads.net/avatar/${username}`,
+                    color: 2067276,
+                    channel: 'Guild'
+                })
+            ];
+        }
+
+        if (this.isLeaveMessage(message)) {
+            const username = message
+                .replace(/\[(.*?)\]/g, '')
+                .trim()
+                .split(/ +/g)[0];
+
+            if (!!config.bot.commands.notifyContent) {
+                await client.channels.cache
+                    .get(`${config.discord.channels.loggingChannel}`)
+                    .send(`${config.bot.commands.notifyContent}\n:outbox_tray: ${username} has left the guild!`);
+            }
+
+            let request_res = await SCFAPI.handleLeave(username);
+
+            if(request_res){
+                this.minecraft.broadcastHeadedEmbed({
+                    message: 'Successfully unverified ' + username,
+                    title: `Member Unverification`,
+                    icon: `https://mc-heads.net/avatar/${username}`,
+                    color: 15548997,
+                    channel: 'Logger'
+                });
+            }
+            else{
+                this.minecraft.broadcastHeadedEmbed({
+                    message: 'Failed to unverify ' + username,
+                    title: `Member Unverification`,
+                    icon: `https://mc-heads.net/avatar/${username}`,
+                    color: 15548997,
+                    channel: 'Logger'
+                });
+            }
+
+            return [
+                this.minecraft.broadcastHeadedEmbed({
+                    message: replaceVariables(messages.leaveMessage, { username }),
+                    title: `Member Left`,
+                    icon: `https://mc-heads.net/avatar/${username}`,
+                    color: 15548997,
+                    channel: 'Logger'
+                }),
+                this.minecraft.broadcastHeadedEmbed({
+                    message: replaceVariables(messages.leaveMessage, { username }),
+                    title: `Member Left`,
+                    icon: `https://mc-heads.net/avatar/${username}`,
+                    color: 15548997,
+                    channel: 'Guild'
+                })
+            ];
+        }
+
+        if (this.isKickMessage(message)) {
+            const username = message
+                .replace(/\[(.*?)\]/g, '')
+                .trim()
+                .split(/ +/g)[0];
+
+            if (!!config.bot.commands.notifyContent) {
+                await client.channels.cache
+                    .get(`${config.discord.channels.loggingChannel}`)
+                    .send(`${config.bot.commands.notifyContent}\n:outbox_tray: ${username} has left the guild!`);
+            }
+
+            let request_res = await SCFAPI.handleLeave(username);
+
+            if(request_res){
+                this.minecraft.broadcastHeadedEmbed({
+                    message: 'Successfully unverified ' + username,
+                    title: `Member Unverification`,
+                    icon: `https://mc-heads.net/avatar/${username}`,
+                    color: 15548997,
+                    channel: 'Logger'
+                });
+            }
+            else{
+                this.minecraft.broadcastHeadedEmbed({
+                    message: 'Failed to unverify ' + username,
+                    title: `Member Unverification`,
+                    icon: `https://mc-heads.net/avatar/${username}`,
+                    color: 15548997,
+                    channel: 'Logger'
+                });
+            }
+
+            return [
+                this.minecraft.broadcastHeadedEmbed({
+                    message: replaceVariables(messages.kickMessage, { username }),
+                    title: `Member Kicked`,
+                    icon: `https://mc-heads.net/avatar/${username}`,
+                    color: 15548997,
+                    channel: 'Logger'
+                }),
+                this.minecraft.broadcastHeadedEmbed({
+                    message: replaceVariables(messages.kickMessage, { username }),
+                    title: `Member Kicked`,
+                    icon: `https://mc-heads.net/avatar/${username}`,
+                    color: 15548997,
+                    channel: 'Guild'
+                })
+            ];
+        }
 
         if (this.isPromotionMessage(message)) {
             const username = message
