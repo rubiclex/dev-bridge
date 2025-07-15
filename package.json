@@ -13,7 +13,7 @@
         "nodemon": "nodemon index"
     },
     "imports": {
-        "#root/*.js": "./*.js"
+        "#root/*": "./*"
     },
     "repository": {
         "type": "git",
@@ -33,11 +33,9 @@
     "homepage": "https://github.com/DuckySoLucky/hypixel-discord-chat-bridge#readme",
     "dependencies": {
         "@discordjs/rest": "^1.5.0",
+        "@napi-rs/canvas": "^0.1.70",
         "axios": "0.27.2",
-        "node-json-db": "^2.3.1",
-        "obscenity":"^0.4.3",
         "bad-words": "^3.0.4",
-        "canvas": "^3.1.0",
         "chalk": "^4.1.0",
         "cheerio": "1.0.0-rc.12",
         "cluster": "^0.7.7",
@@ -57,6 +55,7 @@
         "node-fetch": "^2.6.6",
         "nopt": "^7.2.0",
         "prismarine-nbt": "^2.2.1",
+        "pretty-ms": "^7.0.1",
         "rss-parser": "^3.13.0",
         "skyhelper-networth": "^1.25.0",
         "util": "^0.12.5",

@@ -1,4 +1,4 @@
-const config = require('../../config.js');
+const config = require('#root/config.js').getConfig();
 const SCFAPI = require("./scfAPIHandler.js");
 const axios = require('axios');
 

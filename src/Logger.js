@@ -1,5 +1,5 @@
 const chalk = require('chalk');
-const config = require('../config.js');
+const config = require('#root/config.js').getConfig();
 const SCFAPI = require('../API/utils/scfAPIHandler');
 
 async function infoMessage(message) {

@@ -1,7 +1,7 @@
 const minecraftCommand = require('../../contracts/minecraftCommand.js');
 const { getUUID } = require('../../contracts/API/PlayerDBAPI.js');
 const axios = require('axios');
-const config = require('../../../config.js');
+const config = require('#root/config.js').getConfig();
 const rabbits_handler = require('../../../API/constants/rabbits.js');
 const { formatNumber, formatUsername } = require('../../contracts/helperFunctions.js');
 const { renderLore } = require('../../contracts/renderItem.js');
@@ -126,7 +126,7 @@ function prepareRabbits(rabbits) {
     return lines;
 }
 
-class topCommand extends minecraftCommand {
+class chocolateCommand extends minecraftCommand {
     constructor(minecraft) {
         super(minecraft);
 
@@ -147,9 +147,7 @@ class topCommand extends minecraftCommand {
             let passed_username = this.getArgs(message)[0];            username = passed_username || username;
             const player_uuid = await getUUID(username);
 
-            let player_profile = `https://api.hypixel.net/v2/skyblock/profiles?key=${config.minecraft.API.hypixelAPIkey}&uuid=${player_uuid}`;
-
-            let player_data = await hypixelRequest(player_profile).catch((error) => {
+            let player_data = await hypixelRequest(`https://api.hypixel.net/v2/skyblock/profiles?key=${config.API.hypixelAPIkey}&uuid=${player_uuid}`).catch((error) => {
                 throw 'Player has no SkyBlock profiles.';
             });
 
@@ -237,4 +235,4 @@ class topCommand extends minecraftCommand {
     }
 }
 
-module.exports = topCommand;
+module.exports = chocolateCommand;

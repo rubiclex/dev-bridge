@@ -1,5 +1,5 @@
 const minecraftCommand = require('../../contracts/minecraftCommand.js');
-const config = require('../../../config.js');
+const config = require('#root/config.js').getConfig();
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const getAnswer = (message, answer) => {
@@ -24,14 +24,14 @@ class QuickMathsCommand extends minecraftCommand {
         this.description = 'Solve the equation in less than 10 seconds! Test your math skills!';
         this.options = [];
 
-        this.cooldown = 2 * 60 * 1000;
+        this.cooldown = 30 * 1000;
     }
 
     async onCommand(username, message, channel = 'gc') {
         if(last_used + this.cooldown >= (new Date()).getTime()){
             if(notification) return;
             notification = true;
-            return this.send(`/${channel} You can only use !quickmaths command once every 2 minutes :(`);
+            return this.send(`/${channel} You can only use !quickmaths command once every 30 seconds :(`);
         }
         last_used = (new Date()).getTime();
         notification = false;

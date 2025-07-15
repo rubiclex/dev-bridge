@@ -1,13 +1,13 @@
-const config = require('../../../config.js');
+const config = require('#root/config.js').getConfig();
 const { ImgurClient } = require('imgur');
 const Logger = require('#root/src/Logger.js');
 
 const imgurClient = new ImgurClient({
-    accessToken: config.minecraft.API.imgurAPIkey
+    accessToken: config.API.imgurAPIkey
 });
 
 async function uploadImage(image) {
-    if(!config.minecraft.API.useImgur){
+    if(!config.minecraft.commands.integrate_images){
         return {
             data: {
                 link: ''

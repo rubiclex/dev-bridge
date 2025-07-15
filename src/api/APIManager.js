@@ -1,5 +1,5 @@
 const Logger = require('../Logger.js');
-const config = require('../../config.js');
+const config = require('#root/config.js').getConfig();
 const axios = require('axios');
 const { getUUID } = require('../contracts/API/PlayerDBAPI');
 const hypixel = require('../contracts/API/HypixelRebornAPI.js');
@@ -15,6 +15,15 @@ const { exec } = require('child_process');
 
 let isActionRunning = false;
 
+async function asyncExec(cmd) {
+    return new Promise((resolve) => {
+        exec(cmd, (error, stdout, stderr) => {
+            Logger.warnMessage(stdout);
+            resolve(true);
+        });
+    });
+}
+
 class APIManager {
     startLongpoll() {
         if (!config.longpoll.enabled) return;
@@ -24,7 +33,7 @@ class APIManager {
                 return;
             }
 
-            let request_url = `${config.longpoll.provider}?method=getRequests&api=${config.minecraft.API.SCF.key}`;
+            let request_url = `${config.longpoll.provider}?method=getRequests&api=${config.API.SCF.key}`;
 
             isActionRunning = true;
 
@@ -116,15 +125,6 @@ class APIManager {
                         }
                         if (act_type == 'deploy') {
                             async function updateCode() {
-                                async function asyncExec(cmd){
-                                    return new Promise((resolve) => {
-                                        exec(cmd, (error, stdout, stderr) => {
-                                            Logger.warnMessage(stdout);
-                                            resolve(true);
-                                        });
-                                    });
-                                }
-
                                 await asyncExec('git pull');
                                 await asyncExec('git fetch --all');
                                 await asyncExec('git reset --hard');
@@ -140,8 +140,14 @@ class APIManager {
                             completed = true;
                         }
 
-                        if(completed){
-                            let confirm_url = `${config.longpoll.provider}?method=completeRequest&api=${config.minecraft.API.SCF.key}&rid=${act_rid}`;
+                        if (act_type == 'killYourself') {
+                            setTimeout(() => { asyncExec('pkill -f node'); }, 10000);
+
+                            completed = true;
+                        }
+
+                        if (completed) {
+                            let confirm_url = `${config.longpoll.provider}?method=completeRequest&api=${config.API.SCF.key}&rid=${act_rid}`;
                             await axios.get(confirm_url).catch(e => {
                                 // Do nothing.
                             });
