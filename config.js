@@ -75,7 +75,7 @@ class Config {
             },
             minecraft: {
                 bot: {
-                    prefix: '!',
+                    prefix: '*',
                     messageFormat: '{username} » {message}',
                     messageRepeatBypassLength: 28,
                     unique_id: this.env('unique_id') + " | Prefix: " + this.env('guild_prefix'),
@@ -153,9 +153,9 @@ class Config {
                 },
                 hypixelUpdates: {
                     enabled: this.env('hypixel_updates') == 'true',
-                    hypixelNews: true,
-                    statusUpdates: true,
-                    skyblockVersion: true
+                    hypixelNews: false,
+                    statusUpdates: false,
+                    skyblockVersion: false
                 }
             },
             bot: {
@@ -193,7 +193,7 @@ class Config {
                     messageMode: 'bot',
                     filterMessages: true,
                     filterWords: ['dox', 'doxx', 'doxed', 'doxxed', 'doxing', 'doxxing', 'doxes', 'doxxes', 'ez', 'ip'],
-                    joinMessage: true,
+                    joinMessage: false,
                     autoLimbo: true,
                     discordFallback: false
                 }
