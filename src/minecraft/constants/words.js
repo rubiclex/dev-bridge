@@ -1,5 +1,5 @@
 const words = [
-    "travel scroll",
+    "travel-scroll",
 
 ];
 
