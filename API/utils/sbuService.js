@@ -62,40 +62,54 @@ class SbuService {
      * Initialize the auth service - load tokens and login if needed
      */
     async initialize() {
-        try {
-            // Try to load existing tokens
-            await this.loadTokens();
+        const maxRetries = 3;
+        const baseDelay = 1000; // 1 second
 
-            // Verify if access token is still valid
-            if (this.accessToken) {
-                try {
-                    await this.verifyToken();
-                    console.log('Existing access token is valid');
-                    return true;
-                } catch (error) {
-                    console.log('Existing access token is invalid, attempting refresh...');
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // Try to load existing tokens
+                await this.loadTokens();
+
+                // Verify if access token is still valid
+                if (this.accessToken) {
+                    try {
+                        await this.verifyToken();
+                        console.log('Existing access token is valid');
+                        return true;
+                    } catch (error) {
+                        console.log('Existing access token is invalid, attempting refresh...');
+                    }
                 }
-            }
 
-            // Try to refresh if we have a refresh token
-            if (this.refreshToken) {
-                try {
-                    await this.refreshAccessToken();
-                    console.log('Successfully refreshed access token');
-                    return true;
-                } catch (error) {
-                    console.log('Refresh token is invalid, logging in with auth token...');
+                // Try to refresh if we have a refresh token
+                if (this.refreshToken) {
+                    try {
+                        await this.refreshAccessToken();
+                        console.log('Successfully refreshed access token');
+                        return true;
+                    } catch (error) {
+                        console.log('Refresh token is invalid, logging in with auth token...');
+                    }
                 }
+
+                // Login with auth token
+                await this.login();
+                console.log('Successfully logged in with auth token');
+                return true;
+
+            } catch (error) {
+                console.error(`Attempt ${attempt}/${maxRetries} failed:`, error.message);
+                
+                if (attempt === maxRetries) {
+                    console.error('Failed to initialize auth service after all retries:', error.message);
+                    throw error;
+                }
+
+                // Wait before retrying with exponential backoff
+                const delay = baseDelay * Math.pow(2, attempt - 1);
+                console.log(`Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
             }
-
-            // Login with auth token
-            await this.login();
-            console.log('Successfully logged in with auth token');
-            return true;
-
-        } catch (error) {
-            console.error('Failed to initialize auth service:', error.message);
-            throw error;
         }
     }
 
