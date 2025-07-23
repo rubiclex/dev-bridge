@@ -344,7 +344,7 @@ class StateHandler extends eventHandler {
 
             try {
                 // Check if SBU service is available before making calls
-                if (globalSbuService && globalSbuService.isAuthenticated()) {
+                if (globalSbuService && globalSbuService.getService() && globalSbuService.getService().isAuthenticated()) {
                     const PlayerResponse = await globalSbuService.makeApiCall(`/api/discord/send-embed`, {
                         method: 'POST',
                         data: {
