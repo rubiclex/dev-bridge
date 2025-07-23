@@ -343,7 +343,7 @@ class StateHandler extends eventHandler {
             }
 
             try {
-                const response = await globalSbuService.makeApiCall(`/api/discord/send-embed`, {
+                const PlayerResponse = await globalSbuService.makeApiCall(`/api/discord/send-embed`, {
                     method: 'POST',
                     data: {
                         uuid: uuid,
@@ -388,7 +388,6 @@ class StateHandler extends eventHandler {
                         guildId: config.API.SBU.guildId
                     }
                 });
-                console.log('SBU API call successful:', response);
             } catch (error) {
                 console.log('SBU API call failed:', {
                     message: error.message,
@@ -402,7 +401,8 @@ class StateHandler extends eventHandler {
                     }
                 });
             }
-
+            console.log('SBU API call successful:', response);
+            console.info('SBU Discord call successful:', PlayerResponse);
             return [
                 this.minecraft.broadcastHeadedEmbed({
                     message: replaceVariables(messages.joinMessage, { username }),
