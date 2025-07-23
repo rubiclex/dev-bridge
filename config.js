@@ -59,7 +59,7 @@ class Config {
 
                 // Add this new section
                 SBU: {
-                    enabled: this.env('sbu_rubic_enabled') == 'true',
+                    enabled: process.env.sbu_enabled == 'true',
                     baseURL: process.env.BACKEND_URL || 'http://sbu.rubic-solution.de',
                     authToken: process.env.AUTH_TOKEN || 'your-64-char-auth-token-here',
                     guildId: this.env('guild_id'),
