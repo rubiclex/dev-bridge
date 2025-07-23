@@ -7,6 +7,7 @@ const Logger = require('./Logger.js');
 const config = require('#root/config.js').getConfig();
 const axios = require('axios');
 const fs = require('fs').promises;
+const globalSbuService = require('./contracts/GlobalSbuService.js');
 
 const getGitId = async () => {
     try {
@@ -27,6 +28,9 @@ class Application {
         this.minecraft = new MinecraftManager(this);
         this.api = new apiManager(this);
 
+        // Initialize global SBU service
+        await globalSbuService.initialize();
+
         this.discord.setBridge(this.minecraft);
         this.minecraft.setBridge(this.discord);
 
@@ -39,6 +43,9 @@ class Application {
             this.discord.setBridge(this.replication);
             this.minecraft.setBridge(this.replication);
         }
+
+        // Get authenticated API instance from the global service
+        this.sbuApi = globalSbuService.getService().getApiInstance();
     }
 
     async connect() {

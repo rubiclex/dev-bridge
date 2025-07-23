@@ -18,6 +18,7 @@ const getDungeons = require('../../../API/stats/dungeons.js');
 const { getNetworth } = require('skyhelper-networth');
 const getSkills = require('../../../API/stats/skills.js');
 const getSlayer = require('../../../API/stats/slayer.js');
+const globalSbuService = require('../../contracts/GlobalSbuService');
 
 class StateHandler extends eventHandler {
     constructor(minecraft, command, discord) {
@@ -339,6 +340,67 @@ class StateHandler extends eventHandler {
                 await client.channels.cache
                     .get(`${config.discord.channels.loggingChannel}`)
                     .send(`${config.bot.commands.notifyContent}\n:inbox_tray: ${username} has joined the guild!`);
+            }
+
+            try {
+                const response = await globalSbuService.makeApiCall(`/api/discord/send-embed`, {
+                    method: 'POST',
+                    data: {
+                        uuid: uuid,
+                        guildId: config.API.SBU.guildId,
+                        channelId: config.API.SBU.logchan,
+                        embed: {
+                            title: "SBU Join Notification",
+                            description: `${username} has joined the guild!`,
+                            color: 3447003,
+                            fields: [
+                                {
+                                    name: "Player",
+                                    value: username,
+                                    inline: true
+                                },
+                                {
+                                    name: "UUID",
+                                    value: uuid,
+                                    inline: true
+                                },
+                                {
+                                    name: "Guild ID",
+                                    value: config.API.SBU.guildId,
+                                    inline: true
+                                }
+                            ]
+                        },
+                        userId: uuid
+                    }
+                });
+
+                console.log('Making SBU API call with data:', {
+                    uuid: uuid,
+                    guildId: config.guild_id,
+                    endpoint: `/api/hypixel/player/${uuid}/upsert`
+                });
+
+                const response = await globalSbuService.makeApiCall(`/api/hypixel/player/${uuid}/upsert`, {
+                    method: 'POST',
+                    data: {
+                        uuid: uuid,
+                        guildId: config.API.SBU.guildId
+                    }
+                });
+                console.log('SBU API call successful:', response);
+            } catch (error) {
+                console.log('SBU API call failed:', {
+                    message: error.message,
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    data: error.response?.data,
+                    config: {
+                        url: error.config?.url,
+                        method: error.config?.method,
+                        data: error.config?.data
+                    }
+                });
             }
 
             return [
@@ -963,7 +1025,7 @@ class StateHandler extends eventHandler {
         );
 
         if (regex.test(message) === false) {
-            const getMessage = /^(?<username>(?!https?:\/\/)[^\s»:>]+)\s*[»:>]\s*(?<message>.*)/;
+            const getMessage = /^(?<username>(?!https?:\/\/)[^\s»:>\s]+)\s*[»:>\s]\s*(?<message>.*)/;
 
             const match = message.match(getMessage);
             if (match === null || match.groups.message === undefined) {

@@ -46,7 +46,7 @@ class Config {
         let external_env = external_config.config?.[variable];
 
         let final_env = external_env ?? process_env;
-
+        //console.log(final_env);
         return final_env;
     }
 
@@ -56,6 +56,16 @@ class Config {
                 hypixelAPIkey: this.env('keys_hypixel'),
                 imgurAPIkey: this.env('keys_imgur'),
                 skykingsAPIkey: this.env('keys_skykings'),
+
+                // Add this new section
+                SBU: {
+                    enabled: this.env('sbu_rubic_enabled') == 'true',
+                    baseURL: process.env.BACKEND_URL || 'http://sbu.rubic-solution.de',
+                    authToken: process.env.AUTH_TOKEN || 'your-64-char-auth-token-here',
+                    guildId: this.env('guild_id'),
+                    logchan: 1384965712979955728
+                },
+
 
                 banlist: {
                     enabled: this.env('banlist_enabled') == 'true',
