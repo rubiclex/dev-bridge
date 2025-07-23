@@ -78,6 +78,25 @@ class SbuService {
     }
 
     /**
+     * Check if token is expired or about to expire
+     */
+    isTokenExpired() {
+        if (!this.accessToken) return true;
+        
+        try {
+            // Decode JWT payload (simple base64 decode, no verification)
+            const payload = JSON.parse(Buffer.from(this.accessToken.split('.')[1], 'base64').toString());
+            const now = Math.floor(Date.now() / 1000);
+            
+            // Check if token expires within the next 5 minutes (300 seconds)
+            return payload.exp && (payload.exp - now) < 300;
+        } catch (error) {
+            console.error('Error checking token expiration:', error);
+            return true; // Assume expired if we can't parse
+        }
+    }
+
+    /**
      * Ensure we have a valid token, with proper state management
      */
     async ensureValidToken() {
@@ -91,13 +110,23 @@ class SbuService {
             return this.initializationPromise;
         }
 
-        // If we have a valid token, return immediately
-        if (this.accessToken) {
-            return;
+        // If we don't have a token, initialize
+        if (!this.accessToken) {
+            return this.initialize();
         }
 
-        // Start initialization if needed
-        return this.initialize();
+        // Check if token is expired or about to expire
+        if (this.isTokenExpired()) {
+            console.log('Token is expired or about to expire, refreshing...');
+            if (this.refreshToken) {
+                return this.refreshAccessToken();
+            } else {
+                return this.initialize();
+            }
+        }
+
+        // Token is valid
+        return Promise.resolve();
     }
 
     /**
@@ -122,37 +151,47 @@ class SbuService {
     }
 
     async _doInitialize() {
-        const maxRetries = 2; // Reduced from 3
-        const baseDelay = 2000; // Increased base delay
+        const maxRetries = 2;
+        const baseDelay = 2000;
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 // Try to load existing tokens
                 await this.loadTokens();
 
-                // Verify if access token is still valid
+                // If we have an access token, verify it
                 if (this.accessToken) {
                     try {
                         await this.verifyToken();
                         console.log('Existing access token is valid');
                         return true;
                     } catch (error) {
-                        console.log('Existing access token is invalid, attempting refresh...');
+                        if (error.message === 'Token expired') {
+                            console.log('Access token expired, attempting refresh...');
+                            // Try to refresh if we have a refresh token
+                            if (this.refreshToken) {
+                                try {
+                                    await this._doRefreshAccessToken();
+                                    console.log('Successfully refreshed access token');
+                                    return true;
+                                } catch (refreshError) {
+                                    console.log('Refresh token failed:', refreshError.message);
+                                    // Clear invalid tokens
+                                    this.accessToken = null;
+                                    this.refreshToken = null;
+                                }
+                            }
+                        } else {
+                            console.log('Token verification failed:', error.message);
+                            // Clear invalid tokens
+                            this.accessToken = null;
+                            this.refreshToken = null;
+                        }
                     }
                 }
 
-                // Try to refresh if we have a refresh token
-                if (this.refreshToken) {
-                    try {
-                        await this._doRefreshAccessToken();
-                        console.log('Successfully refreshed access token');
-                        return true;
-                    } catch (error) {
-                        console.log('Refresh token is invalid, logging in with auth token...');
-                    }
-                }
-
-                // Login with auth token
+                // If we reach here, we need to login with auth token
+                console.log('Logging in with auth token...');
                 await this.login();
                 console.log('Successfully logged in with auth token');
                 return true;
@@ -261,12 +300,21 @@ class SbuService {
             const response = await axios.get(`${this.baseURL}/api/auth/verify`, {
                 headers: {
                     Authorization: `Bearer ${this.accessToken}`
-                }
+                },
+                timeout: 5000
             });
 
             return response.data;
 
         } catch (error) {
+            // If we get a 401, the token is expired/invalid
+            if (error.response?.status === 401) {
+                console.log('Token verification failed with 401 - token is expired/invalid');
+                // Don't throw here, let the caller handle the refresh
+                throw new Error('Token expired');
+            }
+            
+            // For other errors, throw with more context
             throw new Error(`Token verification failed: ${error.response?.data?.message || error.message}`);
         }
     }
@@ -375,10 +423,61 @@ class SbuService {
      * Make an authenticated API call
      */
     async makeApiCall(endpoint, options = {}) {
-        return new Promise((resolve, reject) => {
-            this.requestQueue.push({ endpoint, options, resolve, reject });
-            this.processQueue();
-        });
+        try {
+            // Proactively ensure we have a valid token
+            await this.ensureValidToken();
+
+            console.log('Making API call:', {
+                endpoint,
+                method: options.method || 'GET',
+                baseURL: this.api.defaults.baseURL,
+                hasData: !!options.data
+            });
+
+            // Use the configured axios instance which already handles auth
+            const response = await this.api({
+                url: endpoint,
+                method: options.method || 'GET',
+                data: options.data,
+                headers: {
+                    'accept': 'application/json',
+                    'content-type': 'application/json',
+                    ...options.headers
+                },
+                ...options
+            });
+
+            return response.data;
+
+        } catch (error) {
+            // If we get a 401 and haven't already retried, try to refresh
+            if (error.response?.status === 401 && !options._retryAttempted) {
+                console.log('Received 401, attempting token refresh...');
+                try {
+                    if (this.refreshToken) {
+                        await this.refreshAccessToken();
+                    } else {
+                        await this.initialize();
+                    }
+                    
+                    // Retry the request with the new token
+                    return await this.makeApiCall(endpoint, { ...options, _retryAttempted: true });
+                } catch (refreshError) {
+                    console.error('Token refresh failed:', refreshError.message);
+                    throw refreshError;
+                }
+            }
+
+            console.error('API call failed:', {
+                message: error.message,
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                url: error.config?.url,
+                method: error.config?.method
+            });
+            throw error;
+        }
     }
 
     async processQueue() {
