@@ -64,6 +64,9 @@ class Config {
                     authToken: process.env.AUTH_TOKEN || 'your-64-char-auth-token-here',
                     guildId: this.env('guild_id'),
                     logchan: 1384965712979955728,
+                    timeout: 10000,
+                    retryAttempts: 2,
+                    retryDelay: 2000,
                     rateLimiting: {
                         enabled: true,
                         minInterval: 100, // ms between requests

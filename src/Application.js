@@ -7,7 +7,7 @@ const Logger = require('./Logger.js');
 const config = require('#root/config.js').getConfig();
 const axios = require('axios');
 const fs = require('fs').promises;
-const globalSbuService = require('./contracts/GlobalSbuService.js');
+const SbuService = require('./../API/utils/sbuService.js');
 
 const getGitId = async () => {
     try {
@@ -23,7 +23,33 @@ const getGitId = async () => {
 };
 
 class Application {
+    constructor() {
+        this.discord = null;
+        this.minecraft = null;
+        this.api = null;
+        this.replication = null;
+        this.sbuApi = null;
+        this.sbuService = null;
+    }
+
     async register() {
+        // Initialize SBU service BEFORE other components
+        if (config.API.SBU.enabled) {
+            try {
+                Logger.infoMessage('Initializing SBU service...');
+                this.sbuService = new SbuService(config.API.SBU.baseURL, config.API.SBU.authToken);
+                await this.sbuService.initialize();
+                
+                // Make it globally available
+                global.globalSbuService = this.sbuService;
+                Logger.infoMessage('SBU service initialized successfully');
+            } catch (error) {
+                Logger.errorMessage('Failed to initialize SBU service:', error.message);
+                // Don't fail the entire startup, just disable SBU features
+                global.globalSbuService = null;
+            }
+        }
+
         this.discord = new DiscordManager(this);
         this.minecraft = new MinecraftManager(this);
         this.api = new apiManager(this);
@@ -49,9 +75,17 @@ class Application {
     }
 
     async connect() {
+        // Add a startup delay to ensure all services are ready
+        Logger.infoMessage('Starting connection sequence...');
+        
         this.discord.connect();
+        
+        // Wait a bit before connecting Minecraft to avoid race conditions
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
         this.minecraft.connect();
         this.api.startLongpoll();
+        
         if (config.replication.enabled) {
             this.replication.connect();
         }
@@ -63,12 +97,10 @@ class Application {
                 if (bot === undefined || bot._client.chat === undefined) {
                     return 0;
                 }
-
                 return 1;
             }
 
             let botConnected = isBotOnline();
-
             let commit_version = ((await getGitId()) ?? 'N/A').slice(0, 7);
 
             if (botConnected == 0) {
@@ -89,6 +121,8 @@ class Application {
             }
         }
 
+        // Wait before starting status checks
+        await new Promise(resolve => setTimeout(resolve, 5000));
         sendStatus();
         setInterval(sendStatus, 30000);
 

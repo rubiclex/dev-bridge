@@ -19,6 +19,7 @@ const { getNetworth } = require('skyhelper-networth');
 const getSkills = require('../../../API/stats/skills.js');
 const getSlayer = require('../../../API/stats/slayer.js');
 const globalSbuService = require('../../contracts/GlobalSbuService');
+const sbuServiceWrapper = require('../../../API/utils/sbuServiceWrapper.js');
 
 class StateHandler extends eventHandler {
     constructor(minecraft, command, discord) {
@@ -344,66 +345,26 @@ class StateHandler extends eventHandler {
 
             try {
                 // Check if SBU service is available before making calls
-                if (globalSbuService && globalSbuService.getService() && globalSbuService.getService().isAuthenticated()) {
-                    const PlayerResponse = await globalSbuService.makeApiCall(`/api/discord/send-embed`, {
-                        method: 'POST',
-                        data: {
-                            channelId: config.API.SBU.logchan,
-                            embed: {
-                                title: "SBU Join Notification",
-                                description: `${username} has joined the guild!`,
-                                color: 3447003,
-                                fields: [
-                                    {
-                                        name: "Player",
-                                        value: username,
-                                        inline: true
-                                    },
-                                    {
-                                        name: "UUID",
-                                        value: uuid,
-                                        inline: true
-                                    },
-                                    {
-                                        name: "Guild ID",
-                                        value: config.API.SBU.guildId,
-                                        inline: true
-                                    }
-                                ]
-                            },
-                            userId: uuid
-                        }
+                if (config.API.SBU.enabled) {
+                    console.log('Making SBU API call with data:', {
+                        uuid: uuid,
+                        guildId: config.API.SBU.guildId,
+                        endpoint: `/api/hypixel/player/${uuid}/upsert`
                     });
 
-                    try {
-                        console.log('Making SBU API call with data:', {
+                    // This will either execute immediately if service is ready,
+                    // or queue the call until service is initialized
+                    const response = await sbuServiceWrapper.makeApiCall(`/api/hypixel/player/${uuid}/upsert`, {
+                        method: 'POST',
+                        data: {
                             uuid: uuid,
-                            guildId: config.guild_id,
-                            endpoint: `/api/hypixel/player/${uuid}/upsert`
-                        });
-
-                        // Add a small delay to avoid overwhelming the API
-                        await new Promise(resolve => setTimeout(resolve, 500));
-
-                        const response = await globalSbuService.makeApiCall(`/api/hypixel/player/${uuid}/upsert`, {
-                            method: 'POST',
-                            data: {
-                                uuid: uuid,
-                                guildId: config.API.SBU.guildId
-                            }
-                        });
-                        console.log('SBU API call successful:', response);
-                    } catch (error) {
-                        // Don't retry immediately on error
-                        console.log('SBU API call failed (will not retry):', {
-                            message: error.message,
-                            status: error.response?.status
-                        });
-                    }
+                            guildId: config.API.SBU.guildId
+                        }
+                    });
                     
-                    console.info('SBU Discord call successful:', PlayerResponse);
+                    console.log('SBU API call successful:', response);
                 } else {
-                    console.log('SBU Service not available or not authenticated, skipping SBU API calls');
+                    console.log('SBU Service not enabled, skipping SBU API calls');
                 }
             } catch (error) {
                 console.log('SBU API call failed:', {
