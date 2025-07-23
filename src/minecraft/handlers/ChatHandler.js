@@ -343,51 +343,59 @@ class StateHandler extends eventHandler {
             }
 
             try {
-                const PlayerResponse = await globalSbuService.makeApiCall(`/api/discord/send-embed`, {
-                    method: 'POST',
-                    data: {
-                        uuid: uuid,
-                        guildId: config.API.SBU.guildId,
-                        channelId: config.API.SBU.logchan,
-                        embed: {
-                            title: "SBU Join Notification",
-                            description: `${username} has joined the guild!`,
-                            color: 3447003,
-                            fields: [
-                                {
-                                    name: "Player",
-                                    value: username,
-                                    inline: true
-                                },
-                                {
-                                    name: "UUID",
-                                    value: uuid,
-                                    inline: true
-                                },
-                                {
-                                    name: "Guild ID",
-                                    value: config.API.SBU.guildId,
-                                    inline: true
-                                }
-                            ]
-                        },
-                        userId: uuid
-                    }
-                });
+                // Check if SBU service is available before making calls
+                if (globalSbuService && globalSbuService.isAuthenticated()) {
+                    const PlayerResponse = await globalSbuService.makeApiCall(`/api/discord/send-embed`, {
+                        method: 'POST',
+                        data: {
+                            uuid: uuid,
+                            guildId: config.API.SBU.guildId,
+                            channelId: config.API.SBU.logchan,
+                            embed: {
+                                title: "SBU Join Notification",
+                                description: `${username} has joined the guild!`,
+                                color: 3447003,
+                                fields: [
+                                    {
+                                        name: "Player",
+                                        value: username,
+                                        inline: true
+                                    },
+                                    {
+                                        name: "UUID",
+                                        value: uuid,
+                                        inline: true
+                                    },
+                                    {
+                                        name: "Guild ID",
+                                        value: config.API.SBU.guildId,
+                                        inline: true
+                                    }
+                                ]
+                            },
+                            userId: uuid
+                        }
+                    });
 
-                console.log('Making SBU API call with data:', {
-                    uuid: uuid,
-                    guildId: config.guild_id,
-                    endpoint: `/api/hypixel/player/${uuid}/upsert`
-                });
-
-                const response = await globalSbuService.makeApiCall(`/api/hypixel/player/${uuid}/upsert`, {
-                    method: 'POST',
-                    data: {
+                    console.log('Making SBU API call with data:', {
                         uuid: uuid,
-                        guildId: config.API.SBU.guildId
-                    }
-                });
+                        guildId: config.guild_id,
+                        endpoint: `/api/hypixel/player/${uuid}/upsert`
+                    });
+
+                    const response = await globalSbuService.makeApiCall(`/api/hypixel/player/${uuid}/upsert`, {
+                        method: 'POST',
+                        data: {
+                            uuid: uuid,
+                            guildId: config.API.SBU.guildId
+                        }
+                    });
+                    
+                    console.log('SBU API call successful:', response);
+                    console.info('SBU Discord call successful:', PlayerResponse);
+                } else {
+                    console.log('SBU Service not available or not authenticated, skipping SBU API calls');
+                }
             } catch (error) {
                 console.log('SBU API call failed:', {
                     message: error.message,
@@ -400,9 +408,9 @@ class StateHandler extends eventHandler {
                         data: error.config?.data
                     }
                 });
+                // Continue execution even if SBU calls fail - don't throw the error
+                console.log('Continuing without SBU integration due to service unavailability');
             }
-            console.log('SBU API call successful:', response);
-            console.info('SBU Discord call successful:', PlayerResponse);
             return [
                 this.minecraft.broadcastHeadedEmbed({
                     message: replaceVariables(messages.joinMessage, { username }),
