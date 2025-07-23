@@ -375,21 +375,32 @@ class StateHandler extends eventHandler {
                         }
                     });
 
-                    console.log('Making SBU API call with data:', {
-                        uuid: uuid,
-                        guildId: config.guild_id,
-                        endpoint: `/api/hypixel/player/${uuid}/upsert`
-                    });
-
-                    const response = await globalSbuService.makeApiCall(`/api/hypixel/player/${uuid}/upsert`, {
-                        method: 'POST',
-                        data: {
+                    try {
+                        console.log('Making SBU API call with data:', {
                             uuid: uuid,
-                            guildId: config.API.SBU.guildId
-                        }
-                    });
+                            guildId: config.guild_id,
+                            endpoint: `/api/hypixel/player/${uuid}/upsert`
+                        });
+
+                        // Add a small delay to avoid overwhelming the API
+                        await new Promise(resolve => setTimeout(resolve, 500));
+
+                        const response = await globalSbuService.makeApiCall(`/api/hypixel/player/${uuid}/upsert`, {
+                            method: 'POST',
+                            data: {
+                                uuid: uuid,
+                                guildId: config.API.SBU.guildId
+                            }
+                        });
+                        console.log('SBU API call successful:', response);
+                    } catch (error) {
+                        // Don't retry immediately on error
+                        console.log('SBU API call failed (will not retry):', {
+                            message: error.message,
+                            status: error.response?.status
+                        });
+                    }
                     
-                    console.log('SBU API call successful:', response);
                     console.info('SBU Discord call successful:', PlayerResponse);
                 } else {
                     console.log('SBU Service not available or not authenticated, skipping SBU API calls');

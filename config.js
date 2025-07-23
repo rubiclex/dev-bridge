@@ -63,7 +63,13 @@ class Config {
                     baseURL: process.env.BACKEND_URL || 'http://sbu.rubic-solution.de',
                     authToken: process.env.AUTH_TOKEN || 'your-64-char-auth-token-here',
                     guildId: this.env('guild_id'),
-                    logchan: 1384965712979955728
+                    logchan: 1384965712979955728,
+                    rateLimiting: {
+                        enabled: true,
+                        minInterval: 100, // ms between requests
+                        maxConcurrent: 3, // max concurrent requests
+                        retryDelay: 5000 // delay before retrying failed requests
+                    }
                 },
 
 

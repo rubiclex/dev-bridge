@@ -10,18 +10,40 @@ class SbuService {
         this.refreshToken = null;
         this.tokenFilePath = path.join(__dirname, '../../tokens/tokens.json');
 
-        // Create axios instance
+        // Add state management to prevent multiple concurrent operations
+        this.isInitializing = false;
+        this.isRefreshing = false;
+        this.initializationPromise = null;
+        this.refreshPromise = null;
+        
+        // Rate limiting
+        this.lastRequestTime = 0;
+        this.minRequestInterval = 100; // Minimum 100ms between requests
+        this.requestQueue = [];
+        this.isProcessingQueue = false;
+
+        // Create axios instance with better defaults
         this.api = axios.create({
             baseURL: this.baseURL,
-            timeout: 30000,
+            timeout: 10000, // Reduced from 30s to 10s
             headers: {
                 'Content-Type': 'application/json'
             }
         });
 
-        // Add request interceptor to include access token
+        // Add request interceptor with rate limiting
         this.api.interceptors.request.use(
-            (config) => {
+            async (config) => {
+                // Add rate limiting
+                const now = Date.now();
+                const timeSinceLastRequest = now - this.lastRequestTime;
+                if (timeSinceLastRequest < this.minRequestInterval) {
+                    await new Promise(resolve => 
+                        setTimeout(resolve, this.minRequestInterval - timeSinceLastRequest)
+                    );
+                }
+                this.lastRequestTime = Date.now();
+
                 if (this.accessToken) {
                     config.headers.Authorization = `Bearer ${this.accessToken}`;
                 }
@@ -30,7 +52,7 @@ class SbuService {
             (error) => Promise.reject(error)
         );
 
-        // Add response interceptor to handle token refresh
+        // Improved response interceptor
         this.api.interceptors.response.use(
             (response) => response,
             async (error) => {
@@ -40,16 +62,13 @@ class SbuService {
                     originalRequest._retry = true;
 
                     try {
-                        await this.refreshAccessToken();
-                        // Retry the original request with new token
+                        // Use the managed refresh method
+                        await this.ensureValidToken();
                         originalRequest.headers.Authorization = `Bearer ${this.accessToken}`;
                         return this.api(originalRequest);
                     } catch (refreshError) {
-                        console.error('Token refresh failed:', refreshError.message);
-                        // If refresh fails, try to login again
-                        await this.login();
-                        originalRequest.headers.Authorization = `Bearer ${this.accessToken}`;
-                        return this.api(originalRequest);
+                        console.error('Token refresh failed during request:', refreshError.message);
+                        throw refreshError;
                     }
                 }
 
@@ -59,11 +78,52 @@ class SbuService {
     }
 
     /**
+     * Ensure we have a valid token, with proper state management
+     */
+    async ensureValidToken() {
+        // If we're already refreshing, wait for that to complete
+        if (this.isRefreshing && this.refreshPromise) {
+            return this.refreshPromise;
+        }
+
+        // If we're initializing, wait for that to complete
+        if (this.isInitializing && this.initializationPromise) {
+            return this.initializationPromise;
+        }
+
+        // If we have a valid token, return immediately
+        if (this.accessToken) {
+            return;
+        }
+
+        // Start initialization if needed
+        return this.initialize();
+    }
+
+    /**
      * Initialize the auth service - load tokens and login if needed
      */
     async initialize() {
-        const maxRetries = 3;
-        const baseDelay = 1000; // 1 second
+        // Prevent multiple concurrent initializations
+        if (this.isInitializing) {
+            return this.initializationPromise;
+        }
+
+        this.isInitializing = true;
+        this.initializationPromise = this._doInitialize();
+
+        try {
+            const result = await this.initializationPromise;
+            return result;
+        } finally {
+            this.isInitializing = false;
+            this.initializationPromise = null;
+        }
+    }
+
+    async _doInitialize() {
+        const maxRetries = 2; // Reduced from 3
+        const baseDelay = 2000; // Increased base delay
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
@@ -84,7 +144,7 @@ class SbuService {
                 // Try to refresh if we have a refresh token
                 if (this.refreshToken) {
                     try {
-                        await this.refreshAccessToken();
+                        await this._doRefreshAccessToken();
                         console.log('Successfully refreshed access token');
                         return true;
                     } catch (error) {
@@ -98,16 +158,16 @@ class SbuService {
                 return true;
 
             } catch (error) {
-                console.error(`Attempt ${attempt}/${maxRetries} failed:`, error.message);
+                console.error(`Init attempt ${attempt}/${maxRetries} failed:`, error.message);
                 
                 if (attempt === maxRetries) {
                     console.error('Failed to initialize auth service after all retries:', error.message);
                     throw error;
                 }
 
-                // Wait before retrying with exponential backoff
-                const delay = baseDelay * Math.pow(2, attempt - 1);
-                console.log(`Retrying in ${delay}ms...`);
+                // Longer delay between retries
+                const delay = baseDelay * attempt;
+                console.log(`Retrying init in ${delay}ms...`);
                 await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
@@ -120,6 +180,8 @@ class SbuService {
         try {
             const response = await axios.post(`${this.baseURL}/api/auth/login`, {
                 token: this.authToken
+            }, {
+                timeout: 5000
             });
 
             this.accessToken = response.data.accessToken;
@@ -141,6 +203,24 @@ class SbuService {
      * Refresh the access token using refresh token
      */
     async refreshAccessToken() {
+        // Prevent multiple concurrent refreshes
+        if (this.isRefreshing) {
+            return this.refreshPromise;
+        }
+
+        this.isRefreshing = true;
+        this.refreshPromise = this._doRefreshAccessToken();
+
+        try {
+            const result = await this.refreshPromise;
+            return result;
+        } finally {
+            this.isRefreshing = false;
+            this.refreshPromise = null;
+        }
+    }
+
+    async _doRefreshAccessToken() {
         if (!this.refreshToken) {
             throw new Error('No refresh token available');
         }
@@ -148,6 +228,8 @@ class SbuService {
         try {
             const response = await axios.post(`${this.baseURL}/api/auth/refresh`, {
                 refreshToken: this.refreshToken
+            }, {
+                timeout: 5000 // Shorter timeout for refresh
             });
 
             this.accessToken = response.data.accessToken;
@@ -293,47 +375,62 @@ class SbuService {
      * Make an authenticated API call
      */
     async makeApiCall(endpoint, options = {}) {
-        try {
-            // Ensure we're authenticated
-            if (!this.isAuthenticated()) {
-                console.log('Not authenticated, initializing...');
-                await this.initialize();
-            }
+        return new Promise((resolve, reject) => {
+            this.requestQueue.push({ endpoint, options, resolve, reject });
+            this.processQueue();
+        });
+    }
 
-            console.log('Making API call:', {
-                endpoint,
-                method: options.method || 'GET',
-                baseURL: this.api.defaults.baseURL,
-                hasData: !!options.data
-            });
-
-            // Use the configured axios instance which already handles auth
-            const response = await this.api({
-                url: endpoint,
-                method: options.method || 'GET',
-                data: options.data,
-                headers: {
-                    'accept': 'application/json',
-                    'content-type': 'application/json',
-                    ...options.headers
-                },
-                ...options
-            });
-
-            return response.data;
-
-        } catch (error) {
-            console.error('API call failed:', {
-                message: error.message,
-                status: error.response?.status,
-                statusText: error.response?.statusText,
-                data: error.response?.data,
-                url: error.config?.url,
-                method: error.config?.method,
-                requestData: error.config?.data
-            });
-            throw error;
+    async processQueue() {
+        if (this.isProcessingQueue || this.requestQueue.length === 0) {
+            return;
         }
+
+        this.isProcessingQueue = true;
+
+        while (this.requestQueue.length > 0) {
+            const { endpoint, options, resolve, reject } = this.requestQueue.shift();
+
+            try {
+                // Ensure we have a valid token
+                await this.ensureValidToken();
+
+                console.log('Making queued API call:', {
+                    endpoint,
+                    method: options.method || 'GET',
+                    queueLength: this.requestQueue.length
+                });
+
+                const response = await this.api({
+                    url: endpoint,
+                    method: options.method || 'GET',
+                    data: options.data,
+                    headers: {
+                        'accept': 'application/json',
+                        'content-type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                resolve(response.data);
+
+                // Small delay between queued requests
+                if (this.requestQueue.length > 0) {
+                    await new Promise(resolve => setTimeout(resolve, this.minRequestInterval));
+                }
+
+            } catch (error) {
+                console.error('Queued API call failed:', {
+                    endpoint,
+                    message: error.message,
+                    status: error.response?.status
+                });
+                reject(error);
+            }
+        }
+
+        this.isProcessingQueue = false;
     }
 }
 
