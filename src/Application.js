@@ -7,7 +7,7 @@ const Logger = require('./Logger.js');
 const config = require('#root/config.js').getConfig();
 const axios = require('axios');
 const fs = require('fs').promises;
-const SbuService = require('./../API/utils/sbuService.js');
+const sbuHelper = require('./utils/sbuHelper.js');
 
 const getGitId = async () => {
     try {
@@ -33,29 +33,12 @@ class Application {
     }
 
     async register() {
-        // Initialize SBU service BEFORE other components
-        if (config.API.SBU.enabled) {
-            try {
-                Logger.infoMessage('Initializing SBU service...');
-                this.sbuService = new SbuService(config.API.SBU.baseURL, config.API.SBU.authToken);
-                await this.sbuService.initialize();
-                
-                // Make it globally available
-                global.globalSbuService = this.sbuService;
-                Logger.infoMessage('SBU service initialized successfully');
-            } catch (error) {
-                Logger.errorMessage('Failed to initialize SBU service:', error.message);
-                // Don't fail the entire startup, just disable SBU features
-                global.globalSbuService = null;
-            }
-        }
-
         this.discord = new DiscordManager(this);
         this.minecraft = new MinecraftManager(this);
         this.api = new apiManager(this);
 
-        // Initialize global SBU service
-        await globalSbuService.initialize();
+        // Initialize SBU helper
+        await sbuHelper.initialize();
 
         this.discord.setBridge(this.minecraft);
         this.minecraft.setBridge(this.discord);
@@ -71,21 +54,13 @@ class Application {
         }
 
         // Get authenticated API instance from the global service
-        this.sbuApi = globalSbuService.getService().getApiInstance();
+        this.sbuApi = global.globalSbuService ? global.globalSbuService.getService().getApiInstance() : null;
     }
 
     async connect() {
-        // Add a startup delay to ensure all services are ready
-        Logger.infoMessage('Starting connection sequence...');
-        
         this.discord.connect();
-        
-        // Wait a bit before connecting Minecraft to avoid race conditions
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
         this.minecraft.connect();
         this.api.startLongpoll();
-        
         if (config.replication.enabled) {
             this.replication.connect();
         }
@@ -97,10 +72,12 @@ class Application {
                 if (bot === undefined || bot._client.chat === undefined) {
                     return 0;
                 }
+
                 return 1;
             }
 
             let botConnected = isBotOnline();
+
             let commit_version = ((await getGitId()) ?? 'N/A').slice(0, 7);
 
             if (botConnected == 0) {
@@ -121,8 +98,6 @@ class Application {
             }
         }
 
-        // Wait before starting status checks
-        await new Promise(resolve => setTimeout(resolve, 5000));
         sendStatus();
         setInterval(sendStatus, 30000);
 

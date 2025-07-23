@@ -20,6 +20,7 @@ const getSkills = require('../../../API/stats/skills.js');
 const getSlayer = require('../../../API/stats/slayer.js');
 const globalSbuService = require('../../contracts/GlobalSbuService');
 const sbuServiceWrapper = require('../../../API/utils/sbuServiceWrapper.js');
+const sbuHelper = require('../../utils/sbuHelper.js');
 
 class StateHandler extends eventHandler {
     constructor(minecraft, command, discord) {
@@ -354,7 +355,7 @@ class StateHandler extends eventHandler {
 
                     // This will either execute immediately if service is ready,
                     // or queue the call until service is initialized
-                    const response = await sbuServiceWrapper.makeApiCall(`/api/hypixel/player/${uuid}/upsert`, {
+                    const response = await sbuHelper.safeApiCall(`/api/hypixel/player/${uuid}/upsert`, {
                         method: 'POST',
                         data: {
                             uuid: uuid,
@@ -362,7 +363,9 @@ class StateHandler extends eventHandler {
                         }
                     });
                     
-                    console.log('SBU API call successful:', response);
+                    if (response) {
+                        console.log('SBU API call successful:', response);
+                    }
                 } else {
                     console.log('SBU Service not enabled, skipping SBU API calls');
                 }
