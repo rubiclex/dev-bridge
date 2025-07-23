@@ -63,7 +63,7 @@ class Config {
                     baseURL: process.env.BACKEND_URL || 'http://sbu.rubic-solution.de',
                     authToken: process.env.AUTH_TOKEN || 'your-64-char-auth-token-here',
                     guildId: this.env('guild_id'),
-                    logchan: 1384965712979955728,
+                    logchan: "1384965712979955728",
                     timeout: 10000,
                     retryAttempts: 2,
                     retryDelay: 2000,
@@ -75,7 +75,6 @@ class Config {
                     }
                 },
 
-
                 banlist: {
                     enabled: this.env('banlist_enabled') == 'true',
                     URL: this.env('banlist_url'),
@@ -83,11 +82,11 @@ class Config {
                 },
 
                 SCF: {
-                    provider: "https://sky.dssoftware.ru/api.php",
-                    mojang: "https://mojang.dssoftware.ru/",
+                    provider: 'https://sky.dssoftware.ru/api.php',
+                    mojang: 'https://mojang.dssoftware.ru/',
                     enabled: !!this.env('scf_api'),
                     key: this.env('scf_api'),
-                    error_reporting: "https://webhook.scfprojects.su/",
+                    error_reporting: 'https://webhook.scfprojects.su/',
                     logo: this.env('scf_logo'),
                     logExtensively: true
                 }
@@ -97,7 +96,7 @@ class Config {
                     prefix: '*',
                     messageFormat: '{username} » {message}',
                     messageRepeatBypassLength: 28,
-                    unique_id: this.env('unique_id') + " | Prefix: " + this.env('guild_prefix'),
+                    unique_id: this.env('unique_id') + ' | Prefix: ' + this.env('guild_prefix'),
                     guild_prefix: this.env('guild_prefix'),
                     replication_prefix: this.env('replica_prefix')
                 },
@@ -185,7 +184,7 @@ class Config {
                             '801634222577156097', // SBU MODS
                             '1048690255903072339',
                             '1048690255903072340', // SCF MODS
-                            '1261265160140754954', // Guild Staff
+                            '1261265160140754954' // Guild Staff
                         ],
                         admin: [
                             '808070562046935060',
@@ -206,7 +205,7 @@ class Config {
                         dev: ['819237478073499648']
                     },
                     notifyContent: this.env('notify_content'),
-                    errorContent: "<@&1249416749334396959>"
+                    errorContent: '<@&1249416749334396959>'
                 },
                 other: {
                     messageMode: 'bot',
@@ -227,7 +226,7 @@ class Config {
                     debugMode: !!this.env('channel_debug'),
                     debugChannel: this.env('channel_debug'),
                     allowedBots: ['155149108183695360', '1224056601829441619', '1049379596006588417']
-                },
+                }
             },
             replication: {
                 enabled: this.env('replica_enabled') == 'true',
@@ -238,11 +237,11 @@ class Config {
                     officer: this.env('replica_officer'),
                     logging: this.env('replica_logging'),
                     debug: false
-                },
+                }
             },
             longpoll: {
                 enabled: true,
-                provider: "https://sky.dssoftware.ru/longpoll/"
+                provider: 'https://sky.dssoftware.ru/longpoll/'
             },
             logging: {
                 verbose: true
