@@ -1,3 +1,4 @@
+const config = require('#root/config.js').getConfig();
 const Logger = require('../Logger.js');
 
 class SbuHelper {
