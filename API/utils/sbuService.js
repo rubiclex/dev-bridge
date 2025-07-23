@@ -58,17 +58,29 @@ class SbuService {
             async (error) => {
                 const originalRequest = error.config;
 
-                if (error.response?.status === 401 && !originalRequest._retry) {
+                // Only handle 401s if this isn't already a retry and we're not in manual retry mode
+                if (error.response?.status === 401 && !originalRequest._retry && !originalRequest._retryAttempted) {
                     originalRequest._retry = true;
 
                     try {
-                        // Use the managed refresh method
-                        await this.ensureValidToken();
+                        console.log('Axios interceptor handling 401, refreshing token...');
+                        
+                        if (this.refreshToken) {
+                            await this.refreshAccessToken();
+                        } else {
+                            await this.initialize();
+                        }
+                        
+                        // Update the authorization header
                         originalRequest.headers.Authorization = `Bearer ${this.accessToken}`;
+                        
+                        console.log('Token refreshed by interceptor, retrying request');
                         return this.api(originalRequest);
+                        
                     } catch (refreshError) {
-                        console.error('Token refresh failed during request:', refreshError.message);
-                        throw refreshError;
+                        console.error('Token refresh failed in interceptor:', refreshError.message);
+                        // Don't retry again, let the error bubble up
+                        return Promise.reject(refreshError);
                     }
                 }
 
@@ -520,10 +532,39 @@ class SbuService {
                 }
 
             } catch (error) {
+                // Handle 401 errors with token refresh and retry
+                if (error.response?.status === 401 && !options._retryAttempted) {
+                    console.log('Received 401 in queue, attempting token refresh...');
+                    try {
+                        if (this.refreshToken) {
+                            await this.refreshAccessToken();
+                        } else {
+                            await this.initialize();
+                        }
+                        
+                        // Put the request back at the front of the queue with retry flag
+                        this.requestQueue.unshift({
+                            endpoint,
+                            options: { ...options, _retryAttempted: true },
+                            resolve,
+                            reject
+                        });
+                        
+                        console.log('Token refreshed, retrying queued request');
+                        continue; // Continue to next iteration to retry this request
+                        
+                    } catch (refreshError) {
+                        console.error('Token refresh failed in queue:', refreshError.message);
+                        reject(refreshError);
+                        continue;
+                    }
+                }
+
                 console.error('Queued API call failed:', {
                     endpoint,
                     message: error.message,
-                    status: error.response?.status
+                    status: error.response?.status,
+                    data: error.response?.data
                 });
                 reject(error);
             }
