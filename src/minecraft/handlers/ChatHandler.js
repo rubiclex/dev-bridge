@@ -348,8 +348,6 @@ class StateHandler extends eventHandler {
                     const PlayerResponse = await globalSbuService.makeApiCall(`/api/discord/send-embed`, {
                         method: 'POST',
                         data: {
-                            uuid: uuid,
-                            guildId: config.API.SBU.guildId,
                             channelId: config.API.SBU.logchan,
                             embed: {
                                 title: "SBU Join Notification",
