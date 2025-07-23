@@ -365,6 +365,42 @@ class StateHandler extends eventHandler {
                     
                     if (response) {
                         console.log('SBU API call successful:', response);
+                        
+                        // Make second API call to send embedded message
+                        console.log('Making SBU send-embed API call');
+                        const embedResponse = await sbuHelper.safeApiCall(`/api/discord/send-embed`, {
+                            method: 'POST',
+                            data: {
+                                channelId: config.API.SBU.logchan,
+                                embed: {
+                                    title: "Guild Member Joined",
+                                    description: `${username} has joined the guild and been added to SBU tracking`,
+                                    color: 2067276,
+                                    fields: [
+                                        {
+                                            name: "Player",
+                                            value: username,
+                                            inline: true
+                                        },
+                                        {
+                                            name: "UUID",
+                                            value: uuid,
+                                            inline: true
+                                        },
+                                        {
+                                            name: "Status",
+                                            value: "Successfully tracked",
+                                            inline: true
+                                        }
+                                    ]
+                                },
+                                userId: uuid
+                            }
+                        });
+                        
+                        if (embedResponse) {
+                            console.log('SBU send-embed API call successful:', embedResponse);
+                        }
                     }
                 } else {
                     console.log('SBU Service not enabled, skipping SBU API calls');
