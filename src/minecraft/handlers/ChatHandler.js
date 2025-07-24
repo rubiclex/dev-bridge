@@ -584,6 +584,90 @@ class StateHandler extends eventHandler {
                     .send(`${config.bot.commands.notifyContent}\n:outbox_tray: ${username} has left the guild!`);
             }
 
+            try {
+                // Get UUID for the user who left
+                let uuid;
+                try {
+                    uuid = await getUUID(username);
+                } catch (e) {
+                    console.log('Failed to get UUID for user:', username);
+                }
+
+                // Check if SBU service is available before making calls
+                if (config.API.SBU.enabled && uuid) {
+                    console.log('Making SBU API call with data:', {
+                        endpoint: `/api/members/${uuid}/guild/${config.API.SBU.guildId}`
+                    });
+
+                    // This will either execute immediately if service is ready,
+                    // or queue the call until service is initialized
+                    const response = await sbuHelper.safeApiCall(`/api/members/${uuid}/guild/${config.API.SBU.guildId}`, {
+                        method: 'DELETE',
+                        data: {
+                            uuid: uuid,
+                            guildId: config.API.SBU.guildId
+                        }
+                    });
+
+                    if (response) {
+                        console.log('SBU API call successful:', response);
+
+                        // Make second API call to send embedded message
+                        console.log('Making SBU send-embed API call');
+                        const embedResponse = await sbuHelper.safeApiCall(`/api/discord/send-embed`, {
+                            method: 'POST',
+                            data: {
+                                channelId: config.API.SBU.logchan,
+                                embed: {
+                                    title: "Guild Member Left",
+                                    description: `${username} has left the guild and been removed from SBU tracking`,
+                                    color: 0xfc1303,
+                                    fields: [
+                                        {
+                                            name: "Player",
+                                            value: username,
+                                            inline: true
+                                        },
+                                        {
+                                            name: "UUID",
+                                            value: uuid,
+                                            inline: true
+                                        },
+                                        {
+                                            name: "Status",
+                                            value: "Successfully removed",
+                                            inline: true
+                                        }
+                                    ]
+                                },
+                                userId: uuid
+                            }
+                        });
+
+                        if (embedResponse) {
+                            console.log('SBU send-embed API call successful:', embedResponse);
+                        }
+                    }
+                } else {
+                    console.log('SBU Service not enabled, skipping SBU API calls');
+                }
+            } catch (error) {
+                console.log('SBU API call failed:', {
+                    message: error.message,
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    data: error.response?.data,
+                    config: {
+                        url: error.config?.url,
+                        method: error.config?.method,
+                        data: error.config?.data
+                    }
+                });
+                // Continue execution even if SBU calls fail - don't throw the error
+                console.log('Continuing without SBU integration due to service unavailability');
+            }
+
+
             let request_res = await SCFAPI.handleLeave(username);
 
             if(request_res){
