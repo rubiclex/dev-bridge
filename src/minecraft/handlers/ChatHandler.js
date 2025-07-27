@@ -367,7 +367,6 @@ class StateHandler extends eventHandler {
                         console.log('SBU API call successful:', response);
 
                         // Add delay before member deletion
-                        logger.debug(`Adding 5 second delay before member deletion for UUID: ${uuid}`, { jobId: job.id });
                         await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
 
                         // Make API call to verify user
@@ -492,7 +491,6 @@ class StateHandler extends eventHandler {
                     }
 
                     // Add delay before member deletion
-                    logger.debug(`Adding 5 second delay before member deletion for UUID: ${uuid}`, { jobId: job.id });
                     await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
 
                     console.log('Making SBU API call with data:', {
@@ -643,7 +641,6 @@ class StateHandler extends eventHandler {
                     }
 
                     // Add delay before member deletion
-                    logger.debug(`Adding 5 second delay before member deletion for UUID: ${uuid}`, { jobId: job.id });
                     await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
 
                     console.log('Making SBU API call with data:', {
