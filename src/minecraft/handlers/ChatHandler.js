@@ -366,6 +366,19 @@ class StateHandler extends eventHandler {
                     if (response) {
                         console.log('SBU API call successful:', response);
                         
+                        // Make API call to verify user
+                        console.log('Making SBU verify-user API call');
+                        const verifyResponse = await sbuHelper.safeApiCall(`/api/discord/verify-user`, {
+                            method: 'POST',
+                            data: {
+                                uuid: uuid
+                            }
+                        });
+                        
+                        if (verifyResponse) {
+                            console.log('SBU verify-user API call successful:', verifyResponse);
+                        }
+                        
                         // Make second API call to send embedded message
                         console.log('Making SBU send-embed API call');
                         const embedResponse = await sbuHelper.safeApiCall(`/api/discord/send-embed`, {
@@ -461,6 +474,19 @@ class StateHandler extends eventHandler {
 
                 // Check if SBU service is available before making calls
                 if (config.API.SBU.enabled && uuid) {
+                    // Make API call to deverify user first
+                    console.log('Making SBU deverify-user API call');
+                    const deverifyResponse = await sbuHelper.safeApiCall(`/api/discord/deverify-user`, {
+                        method: 'POST',
+                        data: {
+                            uuid: uuid
+                        }
+                    });
+                    
+                    if (deverifyResponse) {
+                        console.log('SBU deverify-user API call successful:', deverifyResponse);
+                    }
+
                     console.log('Making SBU API call with data:', {
                         endpoint: `/api/members/${uuid}/guild/${config.API.SBU.guildId}`
                     });
@@ -595,6 +621,19 @@ class StateHandler extends eventHandler {
 
                 // Check if SBU service is available before making calls
                 if (config.API.SBU.enabled && uuid) {
+                    // Make API call to deverify user first
+                    console.log('Making SBU deverify-user API call');
+                    const deverifyResponse = await sbuHelper.safeApiCall(`/api/discord/deverify-user`, {
+                        method: 'POST',
+                        data: {
+                            uuid: uuid
+                        }
+                    });
+                    
+                    if (deverifyResponse) {
+                        console.log('SBU deverify-user API call successful:', deverifyResponse);
+                    }
+
                     console.log('Making SBU API call with data:', {
                         endpoint: `/api/members/${uuid}/guild/${config.API.SBU.guildId}`
                     });
