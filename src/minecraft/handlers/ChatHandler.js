@@ -365,7 +365,11 @@ class StateHandler extends eventHandler {
                     
                     if (response) {
                         console.log('SBU API call successful:', response);
-                        
+
+                        // Add delay before member deletion
+                        logger.debug(`Adding 5 second delay before member deletion for UUID: ${uuid}`, { jobId: job.id });
+                        await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
+
                         // Make API call to verify user
                         console.log('Making SBU verify-user API call');
                         const verifyResponse = await sbuHelper.safeApiCall(`/api/discord/verify-user`, {
@@ -486,6 +490,10 @@ class StateHandler extends eventHandler {
                     if (deverifyResponse) {
                         console.log('SBU deverify-user API call successful:', deverifyResponse);
                     }
+
+                    // Add delay before member deletion
+                    logger.debug(`Adding 5 second delay before member deletion for UUID: ${uuid}`, { jobId: job.id });
+                    await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
 
                     console.log('Making SBU API call with data:', {
                         endpoint: `/api/members/${uuid}/guild/${config.API.SBU.guildId}`
@@ -633,6 +641,10 @@ class StateHandler extends eventHandler {
                     if (deverifyResponse) {
                         console.log('SBU deverify-user API call successful:', deverifyResponse);
                     }
+
+                    // Add delay before member deletion
+                    logger.debug(`Adding 5 second delay before member deletion for UUID: ${uuid}`, { jobId: job.id });
+                    await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
 
                     console.log('Making SBU API call with data:', {
                         endpoint: `/api/members/${uuid}/guild/${config.API.SBU.guildId}`
