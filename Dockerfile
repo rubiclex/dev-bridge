@@ -1,26 +1,16 @@
-FROM node:18-alpine
+FROM node:22.12.0-alpine AS builder
 
-WORKDIR /app
+#set basedir
+WORKDIR /app 
 
-# Copy package files
-COPY package*.json ./
+# make base update and install libs + git
+RUN apk update && apk add build-base g++ cairo-dev pango-dev giflib-dev git
 
-# Install dependencies using npm install
-RUN npm install --production
+# clone repo to enable dc deployment
+RUN git clone https://github.com/DSSoftware/SBU-Bridge.git /app
 
-# Copy source code
-COPY . .
+# Install pnpm and install all dependencies
+RUN npm install -g pnpm \
+    && pnpm install
 
-# Create logs directory
-RUN mkdir -p logs
-
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S botuser -u 1001 -G nodejs && \
-    chown -R botuser:nodejs /app
-
-USER botuser
-
-EXPOSE 3000
-
-CMD ["node", "index.js"]
+CMD [ "node", "index.js" ]

@@ -1,6 +1,4 @@
-.env
+node_modules/
+.prettierrc.json
+auth-cache/
 package-lock.json
-/node_modules/
-/tests/
-/.idea/
-/logs/*

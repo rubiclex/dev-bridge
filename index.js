@@ -1,124 +1,241 @@
-require('dotenv').config();
-const fs = require('node:fs');
-const path = require('node:path');
-const { Client, Collection, GatewayIntentBits } = require('discord.js');
-const logger = require('./utils/logger');
-const authHandler = require('./handler/authHandler');
-const { hasPermission, getPermissionDeniedMessage } = require('./utils/permissionChecker');
+const configLoader = require('#root/config.js');
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers,
-  ]
-});
+(async () => {
+    const config = await configLoader.init();
+    const cluster = require('node:cluster');
+    const axios = require('axios');
+    const Logger = require('./src/Logger.js');
+    const error_reporting_url = config.API.SCF.error_reporting;
 
-// Load command handlers
-client.commands = new Collection();
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-for (const file of commandFiles) {
-  const command = require(`./commands/${file}`);
-  if ('data' in command && 'execute' in command) {
-    client.commands.set(command.data.name, command);
-  } else {
-    logger.warn(`The command at ./commands/${file} is missing a required "data" or "execute" property.`);
-  }
-}
+    const fetch = require('node-fetch');
+    if (cluster.isPrimary) {
+        function sendWebhookLog(params) {
+            fetch(error_reporting_url, {
+                method: 'POST',
+                headers: {
+                    'Content-type': 'application/json',
+                    "Authorization": config.discord.token
+                },
+                body: JSON.stringify(params)
+            });
+        }
 
-// Ready
-client.once('ready', async () => {
-  logger.info(`Logged in as ${client.user.tag}`);
-  
-  // Initialize backend authentication
-  try {
-    await authHandler.authenticate();
-    logger.info('Backend authentication initialized successfully');
-  } catch (error) {
-    logger.error('Failed to initialize backend authentication:', error);
-  }
+        function messageHandler(message) {
+            if (message.event_id && message.event_id === 'exceptionCaught') {
+                let params = {
+                    content: config.bot.commands.errorContent,
+                    embeds: [
+                        {
+                            title: 'Bot Failed',
+                            fields: [
+                                {
+                                    name: 'Exception Data',
+                                    value: `\`\`\`${message.stack}\`\`\`\`\`\`${message.exception}\`\`\`\nInstance: \`${config.minecraft.bot.unique_id}\``
+                                }
+                            ],
+                            color: 0x800000
+                        }
+                    ]
+                };
 
-  // Initialize the Bull Queue worker (just require it, no need to call any methods)
-  require('./handler/discordQueueWorker');
-  logger.info('🔄 Discord queue worker initialized');
-});
+                sendWebhookLog(params);
+            }
+            if (message.event_id === 'initialized') {
+                let params = {
+                    embeds: [
+                        {
+                            title: 'Bot Started',
+                            fields: [
+                                {
+                                    name: 'Instance ID',
+                                    value: `Instance: \`${config.minecraft.bot.unique_id}\``
+                                }
+                            ],
+                            color: 0x008000
+                        }
+                    ]
+                };
 
-// Slash command handler
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return;
+                sendWebhookLog(params);
+            }
+        }
 
-  const command = interaction.client.commands.get(interaction.commandName);
+        let process_state = false;
+        let forced_shutdown = false;
 
-  if (!command) {
-    logger.error(`No command matching ${interaction.commandName} was found.`);
-    return;
-  }
+        setInterval(startEmergencyLongpoll, 30000);
+        async function startEmergencyLongpoll() {
+            if (!config.longpoll.enabled) return;
 
-  // Check permissions before executing command
-  if (!hasPermission(interaction, interaction.commandName)) {
-    const errorMessage = getPermissionDeniedMessage(interaction.commandName);
-    return interaction.reply({ content: errorMessage, ephemeral: true });
-  }
+            let request_url = `${config.longpoll.provider}?method=getRequests&api=${config.API.SCF.key}`;
 
-  try {
-    await command.execute(interaction);
-  } catch (error) {
-    logger.error('Error executing command:', error);
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
-    } else {
-      await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+            try {
+                let response = await axios.get(request_url).catch(e => {
+                    // Do nothing
+                });
+                for (let action of Object.values(response?.data?.requests ?? {})) {
+                    try {
+                        let act_rid = action?.rid ?? 'NONE';
+                        let act_type = action?.action ?? 'NONE';
+                        let act_data = action?.data ?? {};
+                        let completed = false;
+
+                        if (act_type == 'forceReboot') {
+                            process_state = false;
+                            forced_shutdown = false;
+
+                            for (const id in cluster.workers) {
+                                cluster.workers[id].kill();
+                            }
+
+                            completed = true;
+                        }
+
+                        if (act_type == 'killYourself') {
+                            setTimeout(() => { process.exit() }, 10000);
+
+                            completed = true;
+                        }
+
+                        if (completed) {
+                            let confirm_url = `${config.longpoll.provider}?method=completeRequest&api=${config.API.SCF.key}&rid=${act_rid}`;
+                            await axios.get(confirm_url).catch(e => {
+                                // Do nothing.
+                            });
+                        }
+                    } catch (e) {
+                        Logger.warnMessage(action);
+                        Logger.warnMessage(e);
+                    }
+                }
+            } catch (e) {
+                Logger.warnMessage(e);
+            }
+        }
+
+        function reforkProcess() {
+            cluster.fork();
+
+            process_state = true;
+
+            for (const id in cluster.workers) {
+                cluster.workers[id].on('message', messageHandler);
+            }
+        }
+
+        function checkInstructions() {
+            if (forced_shutdown) {
+                return;
+            }
+            let requested_state = 1;
+
+            if (requested_state === 1) {
+                if (!process_state) {
+                    reforkProcess();
+                }
+            } else {
+                if (process_state) {
+                    for (const id in cluster.workers) {
+                        cluster.workers[id].kill();
+                    }
+                }
+            }
+        }
+
+        checkInstructions();
+        setInterval(checkInstructions, 30000);
+
+        cluster.on('exit', function (worker, code, signal) {
+            process_state = false;
+            if (code == 123) {
+                let params = {
+                    content: config.bot.commands.errorContent,
+                    embeds: [
+                        {
+                            title: 'Bot Stopped',
+                            fields: [
+                                {
+                                    name: 'Exception Data',
+                                    value: `Something bad has happened to the bot, maybe it's banned or muted. The app will shut down.\n\nInstance: \`${config.minecraft.bot.unique_id}\``
+                                }
+                            ],
+                            color: 0x800000
+                        }
+                    ]
+                };
+
+                sendWebhookLog(params);
+
+                forced_shutdown = true;
+
+                Logger.errorMessage('The bot was shut down! Continuing to run the parent process...');
+            }
+
+            if (code == 124) {
+                let params = {
+                    content: config.bot.commands.errorContent,
+                    embeds: [
+                        {
+                            title: 'Bot Rebooted',
+                            fields: [
+                                {
+                                    name: 'Exception Data',
+                                    value: `Bot failed to connect to Hypixel, so it rebooted.\n\nInstance: \`${config.minecraft.bot.unique_id}\``
+                                }
+                            ],
+                            color: 0x800000
+                        }
+                    ]
+                };
+
+                sendWebhookLog(params);
+            }
+
+            if (code == 5) {
+                Logger.warnMessage('The bot is deploying the new version...');
+                process.exit();
+            }
+            Logger.infoMessage(`Fork exited with exit code ${code}.`);
+        });
     }
-  }
-});
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  logger.info('Received SIGINT, clearing authentication tokens');
-  authHandler.clearTokens();
-  
-  // Get the queue and close it properly
-  const discordQueue = require('./handler/discordQueueWorker');
-  try {
-    await discordQueue.close();
-    logger.info('Bull Queue closed successfully');
-  } catch (error) {
-    logger.error('Error closing Bull Queue:', error);
-  }
-  
-  client.destroy();
-  process.exit(0);
-});
+    if (cluster.isWorker) {
+        process.on('uncaughtException', (error) => {
+            console.log(error);
+            Logger.infoMessage(error);
+            process.send({
+                event_id: 'exceptionCaught',
+                exception: error.message,
+                stack: error.stack
+            });
+            process.exit(1);
+        });
+        process.on('unhandledRejection', function (err, promise) {
+            console.log('Unhandled rejection (promise: ', promise, ', reason: ', err, ').');
+            Logger.warnMessage(`Unhandled rejection (promise: ${promise}, reason: ${err}).`);
+            process.exit(1);
+        });
+        const app = require('./src/Application.js');
+        const globalSbuService = require('./src/contracts/GlobalSbuService.js'); // Change this line
 
-process.on('SIGTERM', async () => {
-  logger.info('Received SIGTERM, clearing authentication tokens');
-  authHandler.clearTokens();
-  
-  // Get the queue and close it properly
-  const discordQueue = require('./handler/discordQueueWorker');
-  try {
-    await discordQueue.close();
-    logger.info('Bull Queue closed successfully');
-  } catch (error) {
-    logger.error('Error closing Bull Queue:', error);
-  }
-  
-  client.destroy();
-  process.exit(0);
-});
+        ('use strict');
 
-// Error handling
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-  process.exit(1);
-});
-
-client.login(process.env.DISCORD_BOT_TOKEN);
-
-// Export the client for use in other modules
-module.exports = client;
+        app.register()
+            .then(async () => {
+                // Initialize Global SBU service if enabled
+                if (config.API.SBU.enabled) {
+                    try {
+                        await globalSbuService.initialize();
+                        Logger.infoMessage('Global SBU service initialized successfully');
+                    } catch (error) {
+                        Logger.warnMessage('Failed to initialize Global SBU service:', error.message);
+                    }
+                }
+            
+                return app.connect();
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+    }
+})()
