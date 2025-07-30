@@ -1,16 +1,37 @@
-FROM node:22.12.0-alpine AS builder
+FROM node:18-alpine
 
-#set basedir
-WORKDIR /app 
+# Install git and bash
+RUN apk add --no-cache git bash
 
-# make base update and install libs + git
-RUN apk update && apk add build-base g++ cairo-dev pango-dev giflib-dev git
+# Set working directory
+WORKDIR /app
 
-# clone repo to enable dc deployment
-RUN git clone https://github.com/rubiclex/dev-bridge.git /app
+# Copy package files
+COPY package*.json ./
 
-# Install pnpm and install all dependencies
-RUN npm install -g pnpm \
-    && pnpm install
+# Install dependencies
+RUN npm ci --only=production
 
-CMD [ "node", "index.js" ]
+# Copy source code
+COPY . .
+
+# Create logs directory
+RUN mkdir -p logs
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
+
+# Change ownership of the app directory
+RUN chown -R nodejs:nodejs /app
+USER nodejs
+
+# Expose both HTTP and HTTPS ports
+EXPOSE 7000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://sbu.rubic-solution.de/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+# Start the application
+CMD ["npm", "start"]
