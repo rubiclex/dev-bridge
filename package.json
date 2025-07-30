@@ -1,53 +1,22 @@
 {
-  "name": "sbu-backend",
-  "version": "1.0.0",
-  "description": "Clean SBU Backend API",
-  "main": "src/index.js",
-  "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "private": true,
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/rubiclex/SBU-Backend.git"
-  },
-  "keywords": [
-    "express",
-    "api",
-    "backend"
-  ],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/rubiclex/SBU-Backend/issues"
-  },
-  "homepage": "https://github.com/rubiclex/SBU-Backend#readme",
-  "dependencies": {
-    "@bull-board/api": "^5.10.2",
-    "@bull-board/express": "^5.10.2",
-    "@bull-board/ui": "^5.10.2",
-    "axios": "^1.10.0",
-    "bcrypt": "^6.0.0",
-    "body-parser": "^1.19.0",
-    "bull": "^4.12.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "express-rate-limit": "^7.5.1",
-    "express-validator": "^7.0.1",
-    "helmet": "^7.1.0",
-    "jsonwebtoken": "^8.5.1",
-    "mariadb": "^3.2.2",
-    "node-cron": "^4.2.1",
-    "redis": "^4.6.12",
-    "selfsigned": "^2.4.1",
-    "swagger-jsdoc": "^6.1.0",
-    "swagger-ui-express": "^4.1.6",
-    "winston": "^3.11.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.2"
-  }
+    "name": "DiscordBot",
+    "version": "1.0.0",
+    "keywords": [
+        "util",
+        "functional",
+        "server",
+        "client",
+        "browser"
+    ],
+    "author": "chris",
+    "contributors": [],
+    "dependencies": {
+        "bull": "^4.16.5",
+        "discord.js": "^14.20.0",
+        "dotenv": "^16.5.0",
+        "mysql2": "^3.14.1",
+        "node-fetch": "^3.3.2",
+        "openai": "^5.8.2",
+        "winston": "^3.17.0"
+    }
 }
