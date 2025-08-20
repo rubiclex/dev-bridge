@@ -81,12 +81,15 @@ class BestiaryCommand extends minecraftCommand {
         return Object.keys(bestiary.categories)
             .map((category) => {
                 if (category === 'fishing') {
-                    Object.keys(bestiary.categories[category]).map((key) => {
-                        if (key === 'name') return;
-                        return bestiary.categories[category][key].mobs.map((mob) => mob);
-                    });
+                    return Object.keys(bestiary.categories[category])
+                        .map((key) => {
+                            if (key === 'name') return null;
+                            return bestiary.categories[category][key].mobs?.map((mob) => mob) || [];
+                        })
+                        .filter(Boolean)
+                        .flat();
                 } else {
-                    return bestiary.categories[category].mobs.map((mob) => mob);
+                    return bestiary.categories[category].mobs?.map((mob) => mob) || [];
                 }
             })
             .flat()
