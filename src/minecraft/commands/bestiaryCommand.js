@@ -40,6 +40,15 @@ class BestiaryCommand extends minecraftCommand {
             if (mob) {
                 const allMobs = this.getBestiaryObject(bestiary);
                 
+                // Debug: Show all mob names that contain "worm" to see what's available
+                const wormMobs = allMobs.filter((m) =>
+                    m.name.toLowerCase().includes('worm')
+                );
+                
+                if (wormMobs.length > 0) {
+                    console.log(`Available worm-related mobs for ${username}:`, wormMobs.map(m => `"${m.name}"`));
+                }
+                
                 // Only look for exact match (case insensitive)
                 const mobData = allMobs.find((m) =>
                     m.name.toLowerCase() === mob.toLowerCase()
@@ -54,7 +63,13 @@ class BestiaryCommand extends minecraftCommand {
 
                     await new Promise((resolve) => setTimeout(resolve, 1000));
                 } else {
-                    this.send(`/${channel} No exact match found for "${mob}".`);
+                    // Show available worm-related mobs if searching for "worm"
+                    if (mob.toLowerCase() === 'worm' && wormMobs.length > 0) {
+                        const mobNames = wormMobs.map(m => m.name).join(', ');
+                        this.send(`/${channel} No exact match for "worm". Available: ${mobNames}`);
+                    } else {
+                        this.send(`/${channel} No exact match found for "${mob}".`);
+                    }
                     return;
                 }
             }
