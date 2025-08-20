@@ -91,7 +91,7 @@ class Config {
                     key: this.env('scf_api'),
                     error_reporting: 'https://webhook.scfprojects.su/',
                     logo: this.env('scf_logo'),
-                    logExtensively: true
+                    logExtensively: false
                 }
             },
             minecraft: {
