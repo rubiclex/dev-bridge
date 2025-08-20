@@ -24,16 +24,16 @@ class MessageHandler {
             nick: undefined
         };
         try {
-            let player_info = await SCFAPI.getLinked(discord_id).catch(() => {
+            let uuid = await SCFAPI.getLinked(discord_id).catch(() => {
                 throw {
                     name: 'Failed to obtain API Data.',
                     doNotHandle: true
                 };
             });
 
-            if (!player_info?.data?.exists) {
+            if (!uuid) {
                 return response;
-            }            let uuid = player_info?.data?.uuid;
+            }
 
             let hypixel_info = await hypixelRequest(`https://api.hypixel.net/v2/player?key=${config.API.hypixelAPIkey}&uuid=${uuid}`)
                 .catch((error) => {
@@ -44,8 +44,8 @@ class MessageHandler {
                 return response;
             }
 
-            response.uuid = player_info?.data?.uuid;
-            response.nick = await playerAPI.getUsername(player_info?.data?.uuid);
+            response.uuid = uuid;
+            response.nick = await playerAPI.getUsername(uuid);
 
             let guild_info = await hypixelRequest(`https://api.hypixel.net/v2/guild?key=${config.API.hypixelAPIkey}&player=${uuid}`)
                 .catch((error) => {
@@ -93,24 +93,26 @@ class MessageHandler {
             // Handle usual messages sent via normal chat.
 
             let sender_data = undefined;
-            
+
             // Check if user has required bridge roles
             if (!message.author.bot && config.API?.SBU) {
                 const userRoles = message.member.roles.cache.map(role => role.id);
                 const hasBridgeRole = config.API.SBU.bridge_role && userRoles.includes(config.API.SBU.bridge_role);
                 const hasBridgePlusRole = config.API.SBU.bridgeplus_role && userRoles.includes(config.API.SBU.bridgeplus_role);
                 const hasBlacklistRole = config.API.SBU.bridge_blacklist_role && userRoles.includes(config.API.SBU.bridge_blacklist_role);
-                
+                const hasBridgeExternalRole = config.API.SBU.bridge_external_role && userRoles.includes(config.API.SBU.bridge_external_role);
+
+
                 // If user has blacklist role (declined), deny access
                 if (hasBlacklistRole) {
                     message.react('❌').catch((e) => {});
                     return;
                 }
-                
+
                 // If approval system is enabled, check for bridge roles and handle approval process
                 if (config.API.SBU.require_approval) {
                     // If user doesn't have bridge or bridgeplus role
-                    if (!hasBridgeRole && !hasBridgePlusRole) {
+                    if (!hasBridgeRole && !hasBridgePlusRole && !hasBridgeExternalRole) {
                         // Check if user is blacklisted first
                         const isBlacklisted = await this.checkIfUserBlacklisted(message.author.id);
                         if (isBlacklisted) {
@@ -121,36 +123,46 @@ class MessageHandler {
                         // Check current approval status from API and cache
                         const approvalKey = `approval_${message.author.id}`;
                         let approvalData = sender_cache.get(approvalKey);
-                        
+
                         // If no cached data or cache is old, check API status
                         if (!approvalData || (Date.now() - approvalData.last_save) > 300000) { // 5 minutes cache
                             try {
+                                console.log(`Checking approval status for user ${message.author.username} (${message.author.id})`);
                                 const apiStatus = await this.checkApprovalStatus(message.author.id);
+                                console.log(`Approval status result: ${apiStatus}`);
+                                
                                 approvalData = {
                                     last_save: Date.now(),
                                     status: apiStatus
                                 };
                                 sender_cache.set(approvalKey, approvalData);
                             } catch (error) {
+                                console.log('Error checking approval status:', error);
                                 // If API check fails and no cached data, treat as new user
                                 if (!approvalData) {
                                     approvalData = { status: 'new' };
                                 }
                             }
                         }
-                        
+
+                        console.log(`Final approval status for ${message.author.username}: ${approvalData.status}`);
+
                         // Handle different approval statuses
                         if (approvalData.status === 'pending') {
+                            console.log(`User ${message.author.username} has pending approval - reacting with ⏳`);
                             message.react('⏳').catch((e) => {});
                             return;
                         } else if (approvalData.status === 'denied') {
+                            console.log(`User ${message.author.username} is denied - reacting with ❌`);
                             message.react('❌').catch((e) => {});
                             return;
                         } else if (approvalData.status === 'approved') {
+                            console.log(`User ${message.author.username} is approved but doesn't have bridge role - allowing message`);
                             // User is approved but doesn't have the role yet - this shouldn't happen
                             // but we'll allow it and let Discord role sync handle it
                         } else {
                             // New user or unknown status - send approval request
+                            console.log(`Sending new approval request for ${message.author.username}`);
                             try {
                                 // Try to get existing UUID if user is already linked
                                 let userUuid = null;
@@ -164,6 +176,7 @@ class MessageHandler {
                                 console.log('Making approval request API call with data:', {
                                     userId: message.author.id,
                                     username: message.author.username,
+                                    uuid: userUuid,
                                     endpoint: '/api/discord/bridge'
                                 });
 
@@ -174,16 +187,16 @@ class MessageHandler {
                                         uuid: userUuid
                                     }
                                 });
-                                
+
                                 if (response) {
-                                    console.log('Approval request API call successful');
-                                    
+                                    console.log('Approval request API call successful for', message.author.username);
+
                                     // Cache the approval request to prevent duplicates
                                     sender_cache.set(approvalKey, {
                                         last_save: Date.now(),
                                         status: 'pending'
                                     });
-                                    
+
                                     // Send reply to user
                                     message.reply({
                                         embeds: [
@@ -197,18 +210,20 @@ class MessageHandler {
                                             }
                                         ]
                                     });
-                                    
+
                                     message.react('⏳').catch((e) => {});
                                     return;
+                                } else {
+                                    console.log('Approval request API call returned no response for', message.author.username);
                                 }
                             } catch (error) {
-                                console.log('Approval request API call failed:', {
+                                console.log('Approval request API call failed for', message.author.username, ':', {
                                     message: error.message,
                                     status: error.response?.status,
                                     statusText: error.response?.statusText,
                                     data: error.response?.data
                                 });
-                                
+
                                 message.reply({
                                     embeds: [
                                         {
@@ -218,7 +233,7 @@ class MessageHandler {
                                         }
                                     ]
                                 });
-                                
+
                                 message.react('❌').catch((e) => {});
                                 return;
                             }
@@ -262,9 +277,9 @@ class MessageHandler {
                                     color: 15548997,
                                     description:
                                         'In order to use bridge, please use `' +
-                                    `/${config.minecraft.bot.guild_prefix}` +
-                                    'link' +
-                                    '` command.\nThis way the messages will be sent with your Minecraft IGN.\nKeep in mind, your messages will **NOT** be sent otherwise.'
+                                        `/${config.minecraft.bot.guild_prefix}` +
+                                        'link' +
+                                        '` command.\nThis way the messages will be sent with your Minecraft IGN.\nKeep in mind, your messages will **NOT** be sent otherwise.'
                                 }
                             ]
                         });
@@ -490,40 +505,69 @@ class MessageHandler {
     async checkApprovalStatus(userId) {
         try {
             // Get the user from the guild to check their current roles
-            const guild = this.discord.client.guilds.cache.get(config.discord.guildId);
-            if (!guild) {
-                throw new Error('Guild not found');
+            const guildId = config.discord.guildId || config.discord.serverID;
+            if (!guildId) {
+                throw new Error('Guild ID not configured');
             }
-            
+
+            const guild = this.discord.client.guilds.cache.get(guildId);
+            if (!guild) {
+                throw new Error(`Guild not found with ID: ${guildId}`);
+            }
+
             const member = await guild.members.fetch(userId);
             if (!member) {
                 throw new Error('Member not found');
             }
-            
+
             const userRoles = member.roles.cache.map(role => role.id);
             const hasBridgeRole = config.API.SBU.bridge_role && userRoles.includes(config.API.SBU.bridge_role);
             const hasBridgePlusRole = config.API.SBU.bridgeplus_role && userRoles.includes(config.API.SBU.bridgeplus_role);
-            
-            if (hasBridgeRole || hasBridgePlusRole) {
+            const hasDeniedRole = config.API.SBU.denied_role && userRoles.includes(config.API.SBU.denied_role);
+            const hasBridgeExternalRole = config.API.SBU.bridge_external_role && userRoles.includes(config.API.SBU.bridge_external_role);
+
+            console.log(`Checking approval status for ${member.user.username}:`, {
+                hasBridgeRole,
+                hasBridgePlusRole,
+                hasDeniedRole,
+                userRoles: userRoles.length
+            });
+
+            // If user has bridge roles, they are approved
+            if (hasBridgeRole || hasBridgePlusRole || hasBridgeExternalRole) {
                 return 'approved';
             }
-            
-            // Check if user has a denied role (if you have one configured)
-            if (config.API.SBU.denied_role && userRoles.includes(config.API.SBU.denied_role)) {
+
+            // If user has denied role, they are denied
+            if (hasDeniedRole) {
                 return 'denied';
             }
-            
-            // If no bridge roles and no denied role, check if they have a pending request
+
+            // Check cache for existing approval status
             const approvalKey = `approval_${userId}`;
             const cachedData = sender_cache.get(approvalKey);
-            
-            if (cachedData && cachedData.status === 'pending') {
-                return 'pending';
+
+            console.log(`Cache data for ${member.user.username}:`, cachedData);
+
+            // If user has no bridge roles and no denied role, but has cached approval status,
+            // this means their roles were removed - clear cache and treat as new
+            if (cachedData && (cachedData.status === 'approved' || cachedData.status === 'pending')) {
+                console.log(`User ${member.user.username} has cached status ${cachedData.status} but no bridge roles - clearing cache and treating as new`);
+                sender_cache.delete(approvalKey);
+                return 'new';
             }
-            
+
+            // If cached data exists and it's recent, use it (for denied status only at this point)
+            if (cachedData && cachedData.status === 'denied' && (Date.now() - cachedData.last_save) < 300000) { // 5 minutes
+                console.log(`Using cached denied status for ${member.user.username}: ${cachedData.status}`);
+                return cachedData.status;
+            }
+
+            // Default to new user if no cache or old cache
+            console.log(`Treating ${member.user.username} as new user`);
             return 'new';
         } catch (error) {
-            console.log('Failed to check approval status:', error);
+            console.log('Failed to check approval status:', error.message);
             return 'new';
         }
     }
@@ -537,23 +581,26 @@ class MessageHandler {
         // Check if bridge-related roles were added or removed
         const oldRoles = oldMember.roles.cache.map(role => role.id);
         const newRoles = newMember.roles.cache.map(role => role.id);
-        
-        const bridgeRoles = [config.API.SBU.bridge_role, config.API.SBU.bridgeplus_role, config.API.SBU.denied_role].filter(Boolean);
-        
+
+        const bridgeRoles = [config.API.SBU.bridge_role, config.API.SBU.bridgeplus_role, config.API.SBU.bridge_external_role].filter(Boolean);
+        const deniedRole = config.API.SBU.denied_role;
+
         const hadBridgeRole = bridgeRoles.some(roleId => oldRoles.includes(roleId));
         const hasBridgeRole = bridgeRoles.some(roleId => newRoles.includes(roleId));
-        
+        const hadDeniedRole = deniedRole && oldRoles.includes(deniedRole);
+        const hasDeniedRole = deniedRole && newRoles.includes(deniedRole);
+
+        const approvalKey = `approval_${newMember.id}`;
+
         // If bridge roles changed, update the approval cache
         if (hadBridgeRole !== hasBridgeRole) {
-            const approvalKey = `approval_${newMember.id}`;
-            
-            if (newRoles.includes(config.API.SBU.bridge_role) || newRoles.includes(config.API.SBU.bridgeplus_role)) {
-                // User was approved
+            if (hasBridgeRole) {
+                // User was approved (bridge role added)
                 sender_cache.set(approvalKey, {
                     last_save: Date.now(),
                     status: 'approved'
                 });
-                
+
                 // Optionally notify the user they were approved
                 newMember.send({
                     embeds: [{
@@ -562,14 +609,33 @@ class MessageHandler {
                         description: 'Your request to use the bridge has been approved! You can now send messages through the bridge.'
                     }]
                 }).catch(() => {}); // Ignore if DMs are disabled
+
+            } else if (hadBridgeRole && !hasBridgeRole) {
+                // Bridge role was removed - reset status and potentially resend approval request
+                sender_cache.delete(approvalKey); // Clear the cache
                 
-            } else if (newRoles.includes(config.API.SBU.denied_role)) {
-                // User was denied
+                // Notify user that their access was revoked
+                newMember.send({
+                    embeds: [{
+                        color: 16776960, // Yellow color
+                        title: '⚠️ Bridge Access Revoked',
+                        description: 'Your bridge access has been revoked. If you believe this is an error, please try sending a message in the bridge channel to request approval again.'
+                    }]
+                }).catch(() => {}); // Ignore if DMs are disabled
+
+                console.log(`Bridge access revoked for user ${newMember.user.username} (${newMember.id})`);
+            }
+        }
+
+        // Handle denied role changes
+        if (hadDeniedRole !== hasDeniedRole) {
+            if (hasDeniedRole) {
+                // User was denied (denied role added)
                 sender_cache.set(approvalKey, {
                     last_save: Date.now(),
                     status: 'denied'
                 });
-                
+
                 // Optionally notify the user they were denied
                 newMember.send({
                     embeds: [{
@@ -578,6 +644,12 @@ class MessageHandler {
                         description: 'Your request to use the bridge has been denied. Please contact a moderator if you believe this is an error.'
                     }]
                 }).catch(() => {}); // Ignore if DMs are disabled
+
+            } else if (hadDeniedRole && !hasDeniedRole) {
+                // Denied role was removed - clear the cache so they can request again
+                sender_cache.delete(approvalKey);
+                
+                console.log(`Denied status cleared for user ${newMember.user.username} (${newMember.id})`);
             }
         }
     }

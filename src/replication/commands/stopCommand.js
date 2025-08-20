@@ -2,7 +2,7 @@ const HypixelDiscordChatBridgeError = require('../../contracts/errorHandler.js')
 const config = require('#root/config.js').getConfig();
 const { EmbedBuilder } = require('discord.js');
 const app = require('../../Application.js');
-const AuthProvider = require('../AuthProvider.js');
+const AuthProvider = require('#root/src/AuthProvider.js');
 
 module.exports = {
     name: `${config.minecraft.bot.replication_prefix}` + 'stop',
@@ -30,7 +30,7 @@ module.exports = {
             .setDescription('The bot will be shut down in 5 seconds.')
             .setFooter({
                 text: '/help [command] for more information',
-                iconURL: config.API.SCF.logo
+                iconURL: config.branding.logo
             });
 
         interaction.followUp({ embeds: [restartEmbed] });

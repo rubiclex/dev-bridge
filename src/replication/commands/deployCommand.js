@@ -2,7 +2,7 @@ const HypixelDiscordChatBridgeError = require('../../contracts/errorHandler.js')
 const config = require('#root/config.js').getConfig();
 const { EmbedBuilder } = require('discord.js');
 const Logger = require('#root/src/Logger.js');
-const AuthProvider = require('../AuthProvider.js');
+const AuthProvider = require('#root/src/AuthProvider.js');
 const { spawn } = require('child_process');
 const { exec } = require('child_process');
 
@@ -32,7 +32,7 @@ module.exports = {
             .setDescription('The bot is restarting. This might take few seconds.')
             .setFooter({
                 text: '/help [command] for more information',
-                iconURL: config.API.SCF.logo
+                iconURL: config.branding.logo
             });
 
         interaction.followUp({ embeds: [restartEmbed] });

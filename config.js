@@ -1,21 +1,27 @@
 require('dotenv').config();
 const axios = require('axios');
+const SCFAPIClient = require("scf-api");
 
 let external_config = {
     fetched: false,
     config: {}
 };
 
+/**
+ * @type {SCFAPIClient.default}
+ */
+let SCF;
+
 class Config {
     async fetchExternalConfig() {
         try {
             if (external_config.fetched) return;
             if (!process.env.config_url) {
-                console.log("[CONFIG] No Config URL setup, using local config.");
+                console.log('[CONFIG] No Config URL setup, using local config.');
                 external_config.fetched = true;
                 return;
             }
-            console.log("[CONFIG] Fetching external config...");
+            console.log('[CONFIG] Fetching external config...');
 
             let url = `${process.env.config_url}${process.env.scf_api}`;
 
@@ -23,10 +29,9 @@ class Config {
 
             external_config.config = resp.data;
             external_config.fetched = true;
-        }
-        catch (e) {
+        } catch (e) {
             console.log(e);
-            console.log("[CONFIG] Failed to fetch config. Ignoring external config.");
+            console.log('[CONFIG] Failed to fetch config. Ignoring external config.');
         }
     }
 
@@ -39,7 +44,7 @@ class Config {
 
     env(variable) {
         if (!external_config.fetched) {
-            throw "Trying to use an uninitialized external config.";
+            throw 'Trying to use an uninitialized external config.';
         }
 
         let process_env = process.env?.[variable];
@@ -51,7 +56,17 @@ class Config {
     }
 
     getConfig() {
+        if (!SCF) {
+            SCF = new SCFAPIClient(this.env('scf_url'), this.env('discord_token'));
+            SCF.errorHandler((error) => {
+                console.log('[SCF API] Error:', error);
+            });
+        }
         return {
+            SCF: SCF,
+            branding: {
+                logo: this.env('scf_logo'),
+            },
             API: {
                 hypixelAPIkey: this.env('keys_hypixel'),
                 imgurAPIkey: this.env('keys_imgur'),
@@ -62,7 +77,7 @@ class Config {
                     enabled: this.env('sbu_enabled') == 'true',
                     baseURL: this.env('sbu_url'),
                     authToken: this.env('sbu_auth_token'),
-                    logchan: "1385348910913949707",
+                    logchan: this.env('sbu_logchan'),
                     timeout: 10000,
                     retryAttempts: 2,
                     retryDelay: 2000,
@@ -72,9 +87,10 @@ class Config {
                         maxConcurrent: 3, // max concurrent requests
                         retryDelay: 5000 // delay before retrying failed requests
                     },
-                    bridge_role: "1399847464600731828",
-                    bridgeplus_role: "1399847612341026948",
-                    bridge_blacklist_role: "1218393424068087838",
+                    bridge_role: this.env('bridge_role'),
+                    bridgeplus_role: this.env('bridgeplus_role'),
+                    bridge_blacklist_role: this.env('bridge_blacklist_role'),
+                    bridge_external_role: this.env('bridge_external_role'),
                     require_approval: this.env('sbu_approval') == 'true' || false
                 },
 
@@ -84,19 +100,22 @@ class Config {
                     skykings: this.env('skykings_enabled') == 'true'
                 },
 
-                SCF: {
-                    provider: 'https://sky.dssoftware.ru/api.php',
+                tools: {
                     mojang: 'https://mojang.dssoftware.ru/',
+                    hypixel: "hypixel.dssoftware.ru",
+                    error_reporting: 'https://webhook.scfprojects.su/',
+                },
+
+                SCF: {
+                    provider: this.env('scf_url'),
                     enabled: !!this.env('scf_api'),
                     key: this.env('scf_api'),
-                    error_reporting: 'https://webhook.scfprojects.su/',
-                    logo: this.env('scf_logo'),
-                    logExtensively: false
+                    logExtensively: true
                 }
             },
             minecraft: {
                 bot: {
-                    prefix: '*',
+                    prefix: '!',
                     messageFormat: '{username} » {message}',
                     messageRepeatBypassLength: 28,
                     unique_id: this.env('unique_id') + ' | Prefix: ' + this.env('guild_prefix'),
@@ -187,7 +206,7 @@ class Config {
                             '801634222577156097', // SBU MODS
                             '1048690255903072339',
                             '1048690255903072340', // SCF MODS
-                            '1261265160140754954',// Guild Staff
+                            '1261265160140754954' // Guild Staff
                         ],
                         admin: [
                             '808070562046935060',
@@ -229,7 +248,7 @@ class Config {
                     debugMode: !!this.env('channel_debug'),
                     debugChannel: this.env('channel_debug'),
                     allowedBots: ['155149108183695360', '1224056601829441619', '1049379596006588417']
-                },
+                }
             },
             replication: {
                 enabled: this.env('replica_enabled') == 'true',
@@ -240,11 +259,7 @@ class Config {
                     officer: this.env('replica_officer'),
                     logging: this.env('replica_logging'),
                     debug: false
-                },
-            },
-            longpoll: {
-                enabled: true,
-                provider: 'https://sky.dssoftware.ru/longpoll/'
+                }
             },
             logging: {
                 verbose: true
