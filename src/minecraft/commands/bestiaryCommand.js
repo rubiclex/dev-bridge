@@ -38,9 +38,32 @@ class BestiaryCommand extends minecraftCommand {
             }
 
             if (mob) {
-                const mobData = this.getBestiaryObject(bestiary).find((m) =>
-                    m.name.toLowerCase().includes(mob.toLowerCase())
+                const allMobs = this.getBestiaryObject(bestiary);
+                
+                // First try to find an exact match
+                let mobData = allMobs.find((m) =>
+                    m.name.toLowerCase() === mob.toLowerCase()
                 );
+                
+                // If no exact match, find the first partial match
+                if (!mobData) {
+                    mobData = allMobs.find((m) =>
+                        m.name.toLowerCase().includes(mob.toLowerCase())
+                    );
+                }
+                
+                // If still no match, show all matches for debugging
+                if (!mobData) {
+                    const matches = allMobs.filter((m) =>
+                        m.name.toLowerCase().includes(mob.toLowerCase())
+                    );
+                    
+                    if (matches.length > 0) {
+                        const matchNames = matches.map(m => m.name).join(', ');
+                        this.send(`/${channel} Multiple matches found: ${matchNames}. Please be more specific.`);
+                        return;
+                    }
+                }
 
                 if (mobData) {
                     this.send(
@@ -50,6 +73,9 @@ class BestiaryCommand extends minecraftCommand {
                     );
 
                     await new Promise((resolve) => setTimeout(resolve, 1000));
+                } else {
+                    this.send(`/${channel} No bestiary data found for "${mob}".`);
+                    return;
                 }
             }
 
