@@ -274,10 +274,10 @@ async function SCFsaveStatus(botConnected, commit_version) {
                     resolve(true);
                 })
                 .catch(function (error) {
-                    console.log(error);
-                    disableFeature(require_service);
+                    //console.log(error);
                     resolve(false);
-                });
+                }); disableFeature(require_service);
+
         }
 
         resolve(true);
