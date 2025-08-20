@@ -237,31 +237,8 @@ async function SCFsaveMessage(source, nick, uuid, guild) {
             return;
         }
 
-        // Check if the Score service is configured and enabled
-        if (!config.API.SCF.enabled || !config.SCF?.API?.score) {
-            resolve(false);
-            return;
-        }
-
         if (getFeatureStatus(require_service) == 'OPERATIONAL') {
-            try{
-                await config.SCF.API.score.saveMessage(uuid, nick, guild)
-            }
-            catch(e){
-                // Check if this is a feature flag error
-                if (e.message && e.message.includes('Message Score feature flag')) {
-                    console.log(`[SCF API] Message Score feature flag not enabled. Disabling Score service.`);
-                    disableFeature(require_service);
-                    resolve(false);
-                    return;
-                }
-                
-                // Handle other API errors
-                console.log(e);
-                disableFeature(require_service);
-                resolve(false);
-                return;
-            }
+
         }
 
         resolve(true);
