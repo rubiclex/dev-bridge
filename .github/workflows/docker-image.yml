@@ -34,5 +34,5 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: true
         tags: |
-          skyblockuni/bridge:latest
-          skyblockuni/bridge:${{ github.run_number }}
+          rubiclex/dev-bridge:latest
+          rubiclex/dev-bridge:${{ github.run_number }}
