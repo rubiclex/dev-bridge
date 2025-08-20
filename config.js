@@ -274,7 +274,7 @@ class Config {
                 // User link service, responsible for correct IGN for discord messages.
                 Link: 'REPLACE',
                 // Assigns user a score for speaking in guild chat.
-                Score: 'REPLACE',
+                Score: 'DISABLE',
                 // Internal SCF API
                 InternalAPI: 'REPLACE',
                 // Locks user from using bridges. DEPENDS ON LINK SERVICE.

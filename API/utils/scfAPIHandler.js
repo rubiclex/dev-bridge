@@ -242,7 +242,7 @@ async function SCFsaveMessage(source, nick, uuid, guild) {
                 await config.SCF.API.score.saveMessage(uuid, nick, guild)
             }
             catch(e){
-                //console.log(e);
+                console.log(e);
                 disableFeature(require_service);
                 resolve(false);
                 return;
