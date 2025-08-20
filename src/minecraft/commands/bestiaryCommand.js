@@ -40,44 +40,10 @@ class BestiaryCommand extends minecraftCommand {
             if (mob) {
                 const allMobs = this.getBestiaryObject(bestiary);
                 
-                // Debug: log all available mobs containing the search term
-                const debugMatches = allMobs.filter((m) =>
-                    m.name.toLowerCase().includes(mob.toLowerCase())
-                );
-                console.log(`Debug - Available mobs for "${mob}":`, debugMatches.map(m => m.name));
-                
-                // First try to find an exact match (case insensitive)
-                let mobData = allMobs.find((m) =>
+                // Only look for exact match (case insensitive)
+                const mobData = allMobs.find((m) =>
                     m.name.toLowerCase() === mob.toLowerCase()
                 );
-                
-                console.log(`Debug - Exact match for "${mob}":`, mobData?.name || 'None found');
-                
-                // If no exact match, find all partial matches and sort them
-                if (!mobData) {
-                    const matches = allMobs.filter((m) =>
-                        m.name.toLowerCase().includes(mob.toLowerCase())
-                    );
-                    
-                    if (matches.length > 0) {
-                        // Sort matches by name length (shorter names first) then alphabetically
-                        // This ensures "Worm" comes before "Flaming Worm"
-                        matches.sort((a, b) => {
-                            if (a.name.length !== b.name.length) {
-                                return a.name.length - b.name.length;
-                            }
-                            return a.name.localeCompare(b.name);
-                        });
-                        
-                        mobData = matches[0]; // Take the first (shortest/alphabetically first) match
-                        
-                        if (matches.length > 1) {
-                            const matchNames = matches.map(m => `${m.name} (${m.kills}/${m.nextTierKills})`).join(', ');
-                            this.send(`/${channel} Multiple matches found: ${matchNames}. Showing: ${mobData.name}`);
-                            await new Promise((resolve) => setTimeout(resolve, 1000));
-                        }
-                    }
-                }
 
                 if (mobData) {
                     this.send(
@@ -88,7 +54,7 @@ class BestiaryCommand extends minecraftCommand {
 
                     await new Promise((resolve) => setTimeout(resolve, 1000));
                 } else {
-                    this.send(`/${channel} No bestiary data found for "${mob}".`);
+                    this.send(`/${channel} No exact match found for "${mob}".`);
                     return;
                 }
             }
