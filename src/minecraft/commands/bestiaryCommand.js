@@ -114,7 +114,7 @@ class BestiaryCommand extends minecraftCommand {
                 }
             })
             .flat()
-            .filter((mob) => mob?.nextTierKills != null);
+            .filter((mob) => mob?.kills != null);
     }
 }
 
