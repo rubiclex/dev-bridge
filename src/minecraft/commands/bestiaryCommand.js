@@ -40,10 +40,18 @@ class BestiaryCommand extends minecraftCommand {
             if (mob) {
                 const allMobs = this.getBestiaryObject(bestiary);
                 
-                // First try to find an exact match
+                // Debug: log all available mobs containing the search term
+                const debugMatches = allMobs.filter((m) =>
+                    m.name.toLowerCase().includes(mob.toLowerCase())
+                );
+                console.log(`Debug - Available mobs for "${mob}":`, debugMatches.map(m => m.name));
+                
+                // First try to find an exact match (case insensitive)
                 let mobData = allMobs.find((m) =>
                     m.name.toLowerCase() === mob.toLowerCase()
                 );
+                
+                console.log(`Debug - Exact match for "${mob}":`, mobData?.name || 'None found');
                 
                 // If no exact match, find all partial matches and sort them
                 if (!mobData) {
@@ -51,7 +59,7 @@ class BestiaryCommand extends minecraftCommand {
                         m.name.toLowerCase().includes(mob.toLowerCase())
                     );
                     
-                    if (matches.length > 1) {
+                    if (matches.length > 0) {
                         // Sort matches by name length (shorter names first) then alphabetically
                         // This ensures "Worm" comes before "Flaming Worm"
                         matches.sort((a, b) => {
@@ -61,11 +69,14 @@ class BestiaryCommand extends minecraftCommand {
                             return a.name.localeCompare(b.name);
                         });
                         
-                        const matchNames = matches.map(m => `${m.name} (${m.kills}/${m.nextTierKills})`).join(', ');
-                        this.send(`/${channel} Multiple matches found: ${matchNames}. Showing first match.`);
+                        mobData = matches[0]; // Take the first (shortest/alphabetically first) match
+                        
+                        if (matches.length > 1) {
+                            const matchNames = matches.map(m => `${m.name} (${m.kills}/${m.nextTierKills})`).join(', ');
+                            this.send(`/${channel} Multiple matches found: ${matchNames}. Showing: ${mobData.name}`);
+                            await new Promise((resolve) => setTimeout(resolve, 1000));
+                        }
                     }
-                    
-                    mobData = matches[0]; // Take the first (shortest/alphabetically first) match
                 }
 
                 if (mobData) {
