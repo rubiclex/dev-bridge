@@ -55,10 +55,13 @@ class BestiaryCommand extends minecraftCommand {
                 );
 
                 if (mobData) {
+                    const isMaxed = mobData.nextTierKills == null;
+                    const displayText = isMaxed 
+                        ? `${mobData.kills} (MAXED)`
+                        : `${mobData.kills} / ${mobData.nextTierKills} (${mobData.nextTierKills - mobData.kills})`;
+                    
                     this.send(
-                        `/${channel} ${username}'s ${mobData.name} Bestiary: ${mobData.kills} / ${mobData.nextTierKills} (${
-                            mobData.nextTierKills - mobData.kills
-                        }) `
+                        `/${channel} ${username}'s ${mobData.name} Bestiary: ${displayText}`
                     );
 
                     await new Promise((resolve) => setTimeout(resolve, 1000));
