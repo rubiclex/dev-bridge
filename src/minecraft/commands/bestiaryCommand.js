@@ -45,24 +45,27 @@ class BestiaryCommand extends minecraftCommand {
                     m.name.toLowerCase() === mob.toLowerCase()
                 );
                 
-                // If no exact match, find the first partial match
-                if (!mobData) {
-                    mobData = allMobs.find((m) =>
-                        m.name.toLowerCase().includes(mob.toLowerCase())
-                    );
-                }
-                
-                // If still no match, show all matches for debugging
+                // If no exact match, find all partial matches and sort them
                 if (!mobData) {
                     const matches = allMobs.filter((m) =>
                         m.name.toLowerCase().includes(mob.toLowerCase())
                     );
                     
-                    if (matches.length > 0) {
-                        const matchNames = matches.map(m => m.name).join(', ');
-                        this.send(`/${channel} Multiple matches found: ${matchNames}. Please be more specific.`);
-                        return;
+                    if (matches.length > 1) {
+                        // Sort matches by name length (shorter names first) then alphabetically
+                        // This ensures "Worm" comes before "Flaming Worm"
+                        matches.sort((a, b) => {
+                            if (a.name.length !== b.name.length) {
+                                return a.name.length - b.name.length;
+                            }
+                            return a.name.localeCompare(b.name);
+                        });
+                        
+                        const matchNames = matches.map(m => `${m.name} (${m.kills}/${m.nextTierKills})`).join(', ');
+                        this.send(`/${channel} Multiple matches found: ${matchNames}. Showing first match.`);
                     }
+                    
+                    mobData = matches[0]; // Take the first (shortest/alphabetically first) match
                 }
 
                 if (mobData) {
