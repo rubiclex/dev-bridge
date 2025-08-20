@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apk update && apk add build-base g++ cairo-dev pango-dev giflib-dev git
 
 # clone repo to enable dc deployment
-RUN git clone https://github.com/DSSoftware/SBU-Bridge.git /app
+RUN git clone https://github.com/rubiclex/dev-bridge.git /app
 
 # Install pnpm and install all dependencies
 RUN npm install -g pnpm \
