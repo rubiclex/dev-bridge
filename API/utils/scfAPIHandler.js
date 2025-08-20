@@ -223,7 +223,7 @@ async function SCFgetLinked(discord_id) {
                     `${config.API.SCF.provider}?method=getLinked&discord_id=${discord_id}&api=${config.API.SCF.key}`
                 )
             ]).catch((error) => {
-                console.log(error);
+                //console.log(error);
                 disableFeature(require_service);
                 reject("Failed to obtain API response.");
             });
@@ -254,7 +254,7 @@ async function SCFsaveMessage(source, nick, uuid, guild) {
                     `${config.API.SCF.provider}?method=saveGuildMessage&uuid=${uuid}&source=${source}&api=${config.API.SCF.key}&nick=${nick}&guild_id=${guild}`
                 )
             ]).catch((error) => {
-                console.log(error);
+                //console.log(error);
                 disableFeature(require_service);
             });
         }
@@ -298,7 +298,7 @@ async function SCFsaveLinked(discord_id, uuid, tag) {
                     `${config.API.SCF.provider}?method=saveLinked&discord_id=${discord_id}&uuid=${uuid}&api=${config.API.SCF.key}&tag=${tag}`
                 )
             ]).catch((error) => {
-                console.log(error);
+                //console.log(error);
                 disableFeature(require_service);
                 reject(error);
             });
