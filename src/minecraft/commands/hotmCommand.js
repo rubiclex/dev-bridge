@@ -145,11 +145,11 @@ class MedalsCommand extends minecraftCommand {
             username = formatUsername(username, data.profileData?.game_mode);
 
             let hotm_data = data?.profile?.mining_core;
-
+            console.log(data.profile);
             if (hotm_data == undefined || Object.keys(hotm_data?.nodes ?? {}).length == 0) {
-                throw 'Player has no HOTM data.';
-                console.log(hotm_data);
                 console.log("debug");
+                throw 'Player has no HOTM data.';
+
             }
 
             let hotm_exp = Math.floor(hotm_data?.experience);
