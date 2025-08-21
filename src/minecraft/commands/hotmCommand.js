@@ -148,6 +148,8 @@ class MedalsCommand extends minecraftCommand {
 
             if (hotm_data == undefined || Object.keys(hotm_data?.nodes ?? {}).length == 0) {
                 throw 'Player has no HOTM data.';
+                console.log(hotm_data);
+                console.log("debug");
             }
 
             let hotm_exp = Math.floor(hotm_data?.experience);
