@@ -145,16 +145,14 @@ class MedalsCommand extends minecraftCommand {
             username = formatUsername(username, data.profileData?.game_mode);
 
             let hotm_data = data?.profile?.mining_core;
-            console.log(data.profile?.mining_core);
-            if (hotm_data == undefined || Object.keys(hotm_data?.nodes ?? {}).length == 0) {
-                console.log("debug");
-                throw 'Player has no HOTM data.';
 
+            if (hotm_data == undefined || Object.keys(hotm_data?.nodes ?? {}).length == 0) {
+                throw 'Player has no HOTM data.';
             }
 
             let hotm_exp = Math.floor(hotm_data?.experience);
             let hotm_level_data = await this.getHOTMLevel(hotm_exp);
-                
+
             let mithril_powder = await this.getPowderInfo('mithril', 'Mithril', '§2', hotm_data, true);
             let gemstone_powder = await this.getPowderInfo('gemstone', 'Gemstone', '§d', hotm_data, true);
             let glacite_powder = await this.getPowderInfo('glacite', 'Glacite', '§b', hotm_data, true);
