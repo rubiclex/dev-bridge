@@ -285,6 +285,21 @@ function replaceVariables(template, variables) {
     return template.replace(/\{(\w+)\}/g, (match, name) => variables[name] ?? match);
 }
 
+function titleCase(str) {
+    if (!str) return "";
+
+    if (typeof str !== "string") {
+        return "";
+    }
+
+    return str
+        .toLowerCase()
+        .replaceAll("_", " ")
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+}
+
 module.exports = {
     replaceAllRanks,
     addNotation,
@@ -301,5 +316,6 @@ module.exports = {
     parseTimestamp,
     formatUsername,
     formatNumber,
-    replaceVariables
+    replaceVariables,
+    titleCase
 };
